@@ -48,6 +48,8 @@ public partial class MainWindow : Window
             isAdmin = true;
             PasswordInput.Clear();
             AuthStatus.Text = $"Администратор: {account.Login}";
+            await RefreshTariffsAsync();
+            await RefreshBookingsAsync();
         }
         catch (Exception ex)
         {
@@ -67,6 +69,13 @@ public partial class MainWindow : Window
         token = null;
         isAdmin = false;
         PasswordInput.Clear();
+        // Remove privileged data immediately on logout or failed reauthentication.
+        TariffsTable.ItemsSource = null;
+        BookingsTable.ItemsSource = null;
+        if (TariffStatus is not null) TariffStatus.Text = "Требуется вход администратора.";
+        if (BookingsStatus is not null) BookingsStatus.Text = "Требуется вход администратора.";
+        if (ReportStatus is not null) ReportStatus.Text = "Требуется вход администратора.";
+        if (ExtensionStatus is not null) ExtensionStatus.Text = "Требуется вход администратора.";
     }
 
     private async void Report_Click(object sender, RoutedEventArgs e)
