@@ -1,6 +1,6 @@
 # GamingClub.Android — вариант 18
 
-**Статус:** исходники в `feature/android-client`, draft PR №1. **Debug APK успешно собран** на GitHub Actions и **31 JVM-тест пройден**: https://github.com/prodvex/practice/actions/runs/44364474968. Эмулятор и реальный API/SQL ещё не запускались.
+**Статус:** Android находится в `main` (PR #1 объединён). Исправленный Debug APK собран, **31 JVM-тест PASS**: https://github.com/prodvex/practice/actions/runs/44369326160. Android 15 Emulator установил APK и запустил Activity: https://github.com/prodvex/practice/actions/runs/44366584601. Продакшен-сервер и физический телефон пока не проверены.
 
 [Шесть редактируемых экранов Figma](https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P) и HTML-прототип в `docs/design/prototype.html` — макеты, не скриншоты работающего приложения.
 
@@ -38,7 +38,7 @@
 
 ## Открытые ограничения
 
-- **Компиляция Android и JVM-тесты подтверждены**, но запуск APK на эмуляторе, поведение интерфейса и связка с настоящей SQL-базой ещё не проверены.
+- Android сборка, JVM-тесты и запуск приложения на эмуляторе Android 15 подтверждены; полный Android→HTTP→SQL сценарий UI пока не проверен.
 - Авторизация живёт только в оперативной памяти; после перезапуска Activity потребуется новый вход.
 - Вычисления стоимости, наличия места на интервал и статуса оплаты подтверждает **сервер**, а не цвет плана.
 - Нет платёжного шлюза, production HTTPS endpoint, окончательной поддержки часового пояса и тестов UI.
