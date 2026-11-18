@@ -1,7 +1,7 @@
 name: GamingClub SQL Server integration verification
 on:
   push:
-    branches: [ci/sql-integration-20261118]
+    branches: [main, ci/sql-integration-20261118]
   workflow_dispatch:
 permissions:
   contents: read
