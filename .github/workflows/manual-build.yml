@@ -1,0 +1,53 @@
+name: GamingClub — manual build and checks
+
+# Runs ONLY when someone clicks "Run workflow" in GitHub Actions.
+# The user explicitly requested no builds during repository authoring.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-dotnet:
+    name: API, WPF and tests (.NET 8)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Static source audit (not a build)
+        shell: pwsh
+        run: python scripts/static_audit.py
+
+      - name: Restore ASP.NET Core API
+        run: dotnet restore src/GamingClub.API/GamingClub.API.csproj
+
+      - name: Build ASP.NET Core API
+        run: dotnet build src/GamingClub.API/GamingClub.API.csproj -c Release --no-restore
+
+      - name: Build Windows WPF client
+        run: dotnet build src/GamingClub.Desktop/GamingClub.Desktop.csproj -c Release
+
+      - name: Run xUnit and HTTP integration checks
+        run: dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj -c Release --collect:"XPlat Code Coverage" --logger "console;verbosity=normal"
+
+      - name: Upload coverage and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-dotnet-test-results
+          path: |
+            tests/GamingClub.Tests/TestResults/
+            **/TestResults/
+          if-no-files-found: warn
+
+# SQL integration tests require a separately prepared GamingClubTest_18 instance
+# and GAMINGCLUB_TEST_SQL_CONNECTION; without it they are explicitly SKIPPED.
+# This workflow does not build Android, create an APK, or deploy services.
