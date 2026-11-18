@@ -56,7 +56,8 @@ class MainActivity : Activity() {
                         if (clockPolling && bookingId == currentBooking) {
                             response.onSuccess { value ->
                                 val remaining = value.getInt("remainingSeconds")
-                                sessionView.text = "Сессия №${value.getInt("sessionId")}, осталось $remaining сек."
+                                sessionView.text = "Сессия №${value.getInt("sessionId")}\\n" +
+                                    SessionClockFormatter.format(remaining)
                                 if (remaining <= 0) {
                                     sessionRunning = false
                                     stopClockPolling()
@@ -534,13 +535,16 @@ class MainActivity : Activity() {
                 startClockPolling()
             }
             "clock" -> execute({ api.clock(id) }) { value ->
-                sessionView.text = "Сессия №${value.getInt("sessionId")}, осталось ${value.getInt("remainingSeconds")} сек."
+                sessionView.text = "Сессия №${value.getInt("sessionId")}\\n" +
+                    SessionClockFormatter.format(value.getInt("remainingSeconds"))
             }
             "extend" -> {
                 val oldEnd = bookedEnd ?: return
                 val newEnd = oldEnd.plus(30, ChronoUnit.MINUTES)
                 execute({ api.extend(id, newEnd.toString()) }) { result ->
-                    bookedEnd = newEnd
+                    bookedEnd = runCatching {
+                        Instant.parse(result.getString("newEndUtc"))
+                    }.getOrDefault(newEnd)
                     status.text = "Продлено; доплата ${result.getDouble("extraChargeRub")} ₽"
                     sessionAction("clock")
                 }
