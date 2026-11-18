@@ -25,6 +25,9 @@ class MainActivity : Activity() {
     private var authenticated = false
     private var userLogin = ""
     private var userRole = ""
+    // Never accept a response from an earlier user session or a superseded login.
+    private var authEpoch = 0L
+    private var authAttempt = 0L
     private val screens = linkedMapOf<String, LinearLayout>()
     private lateinit var seatsView: LinearLayout
     private lateinit var hallPlan: HallPlanView
@@ -83,6 +86,11 @@ class MainActivity : Activity() {
         super.onStop()
     }
 
+    override fun onDestroy() {
+        stopClockPolling()
+        super.onDestroy()
+    }
+
     override fun onStart() {
         super.onStart()
         if (::sessionView.isInitialized && sessionRunning && bookingId != null) startClockPolling()
@@ -97,12 +105,22 @@ class MainActivity : Activity() {
         ClubUi.input(this)
     }
     private fun <T> execute(task: () -> T, complete: (T) -> Unit) {
+        val epoch = authEpoch
         Thread {
             try {
                 val value = task()
-                runOnUiThread { complete(value) }
+                runOnUiThread {
+                    if (epoch == authEpoch && !isFinishing && !isDestroyed) complete(value)
+                }
             } catch (ex: Exception) {
-                runOnUiThread { status.text = "Ошибка API: ${ex.message}" }
+                runOnUiThread {
+                    if (epoch != authEpoch || isFinishing || isDestroyed) return@runOnUiThread
+                    if (ex is ApiException && ex.status == 401 && authenticated) {
+                        signOut("Срок действия входа истёк. Войдите снова.")
+                    } else {
+                        status.text = "Ошибка API: ${ex.message}"
+                    }
+                }
             }
         }.start()
     }
@@ -288,19 +306,7 @@ class MainActivity : Activity() {
             text = "Выйти"
             ClubUi.button(this, false)
             setOnClickListener {
-                stopClockPolling()
-                api.clearToken()
-                authenticated = false
-                sessionRunning = false
-                bookingId = null
-                bookedEnd = null
-                myBookings.removeAllViews()
-                sessionView.text = "Войдите для просмотра сессии"
-                userLogin = ""
-                userRole = ""
-                profileText.text = "Вы не вошли"
-                status.text = "Сессия входа завершена"
-                showScreen("Вход")
+                signOut("Сессия входа завершена")
             }
         })
         showScreen("Вход")
@@ -316,6 +322,32 @@ class MainActivity : Activity() {
         if (::contentScroll.isInitialized) contentScroll.scrollTo(0, 0)
     }
 
+    private fun signOut(message: String) {
+        authEpoch += 1
+        authAttempt += 1
+        stopClockPolling()
+        api.clearToken()
+        authenticated = false
+        sessionRunning = false
+        loadingClock = false
+        bookingId = null
+        bookedEnd = null
+        seatId = null
+        tariffs.clear()
+        myBookings.removeAllViews()
+        seatsView.removeAllViews()
+        loginName.text.clear()
+        loginPassword.text.clear()
+        displayName.text.clear()
+        selectedSeatText.text = "Компьютер ещё не выбран"
+        sessionView.text = "Войдите для просмотра сессии"
+        profileText.text = "Вы не вошли"
+        userLogin = ""
+        userRole = ""
+        status.text = message
+        showScreen("Вход")
+    }
+
     private fun authenticate(register: Boolean) {
         val login = loginName.text.toString().trim()
         val password = loginPassword.text.toString()
@@ -324,9 +356,16 @@ class MainActivity : Activity() {
             status.text = "Заполните обязательные поля"
             return
         }
+        val attempt = ++authAttempt
         execute({
             if (register) api.register(login, password, name) else api.login(login, password)
         }) { result ->
+            if (attempt != authAttempt) return@execute
+            if (result.optString("accessToken").isBlank()) {
+                status.text = "Сервер не вернул токен доступа."
+                return@execute
+            }
+            api.acceptAuth(result)
             authenticated = true
             userLogin = result.getString("login")
             userRole = result.getString("role")
