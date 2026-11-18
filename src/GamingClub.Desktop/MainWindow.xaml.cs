@@ -31,7 +31,7 @@ public partial class MainWindow : Window
         }
         // Explicit timezone offset avoids silently interpreting dates as local time.
         if (!ExtensionTimeInput.Text.Trim().EndsWith("Z", StringComparison.OrdinalIgnoreCase)
-            && !System.Text.RegularExpressions.Regex.IsMatch(ExtensionTimeInput.Text, @"[+-]\\d{2}:\\d{2}$"))
+            && !System.Text.RegularExpressions.Regex.IsMatch(ExtensionTimeInput.Text, @"[+-]\d{2}:\d{2}$"))
         {
             ExtensionStatus.Text = "Дата должна содержать UTC Z или смещение +03:00.";
             return;
