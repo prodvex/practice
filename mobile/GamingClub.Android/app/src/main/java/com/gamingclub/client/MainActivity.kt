@@ -3,6 +3,8 @@ package com.gamingclub.client
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.*
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -22,6 +24,48 @@ class MainActivity : Activity() {
     private var seatId: Int? = null
     private var bookingId: Int? = null
     private var bookedEnd: Instant? = null
+    private val timerHandler = Handler(Looper.getMainLooper())
+    private var clockPolling = false
+    private var loadingClock = false
+    private val clockPoll = object : Runnable {
+        override fun run() {
+            if (!clockPolling || isFinishing || isDestroyed) return
+            val currentBooking = bookingId
+            if (currentBooking != null && !loadingClock) {
+                loadingClock = true
+                execute({ api.clock(currentBooking) }) { value ->
+                    loadingClock = false
+                    if (clockPolling && bookingId == currentBooking) {
+                        val remaining = value.getInt("remainingSeconds")
+                        sessionView.text = "Сессия №${value.getInt("sessionId")}, осталось $remaining сек."
+                        if (remaining <= 0) stopClockPolling()
+                    }
+                }
+            }
+            if (clockPolling) timerHandler.postDelayed(this, 5000)
+        }
+    }
+
+    private fun startClockPolling() {
+        if (clockPolling) return
+        clockPolling = true
+        timerHandler.post(clockPoll)
+    }
+
+    private fun stopClockPolling() {
+        clockPolling = false
+        timerHandler.removeCallbacks(clockPoll)
+    }
+
+    override fun onStop() {
+        stopClockPolling()
+        super.onStop()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (::sessionView.isInitialized && bookingId != null) startClockPolling()
+    }
 
     private fun label(value: String) = TextView(this).apply {
         text = value
@@ -161,6 +205,7 @@ class MainActivity : Activity() {
             return
         }
         execute({ api.book(uid, seat, tariff, start.toString(), end.toString()) }) { result ->
+            stopClockPolling()
             bookingId = result.getInt("bookingId")
             bookedEnd = end
             sessionView.text = "Бронь №$bookingId, цена ${result.getDouble("priceRub")} ₽"
@@ -177,7 +222,7 @@ class MainActivity : Activity() {
         when (action) {
             "start" -> execute({ api.startSession(id) }) {
                 status.text = "Сессия запущена"
-                sessionAction("clock")
+                startClockPolling()
             }
             "clock" -> execute({ api.clock(id) }) { value ->
                 sessionView.text = "Сессия №${value.getInt("sessionId")}, осталось ${value.getInt("remainingSeconds")} сек."
