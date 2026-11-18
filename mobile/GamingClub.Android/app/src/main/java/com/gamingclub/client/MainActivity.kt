@@ -104,7 +104,11 @@ class MainActivity : Activity() {
         setText(value)
         ClubUi.input(this)
     }
-    private fun <T> execute(task: () -> T, complete: (T) -> Unit) {
+    private fun <T> execute(
+        task: () -> T,
+        errorHandler: ((Exception) -> Unit)? = null,
+        complete: (T) -> Unit
+    ) {
         val epoch = authEpoch
         Thread {
             try {
@@ -115,7 +119,9 @@ class MainActivity : Activity() {
             } catch (ex: Exception) {
                 runOnUiThread {
                     if (epoch != authEpoch || isFinishing || isDestroyed) return@runOnUiThread
-                    if (ex is ApiException && ex.status == 401 && authenticated) {
+                    if (errorHandler != null) {
+                        errorHandler(ex)
+                    } else if (ex is ApiException && ex.status == 401 && authenticated) {
                         signOut("Срок действия входа истёк. Войдите снова.")
                     } else {
                         status.text = "Ошибка API: ${ex.message}"
@@ -364,15 +370,21 @@ class MainActivity : Activity() {
             status.text = "Заполните обязательные поля"
             return
         }
+        // Switching accounts must invalidate in-flight calls from the old identity.
+        if (authenticated) signOut("Переключение аккаунта...")
         val attempt = loginGuard.begin()
         execute({
             if (register) api.register(login, password, name) else api.login(login, password)
+        }, errorHandler = { ex ->
+            if (loginGuard.isCurrent(attempt))
+                status.text = "Ошибка входа: ${ex.message}"
         }) { result ->
             if (!loginGuard.isCurrent(attempt)) return@execute
             if (result.optString("accessToken").isBlank()) {
                 status.text = "Сервер не вернул токен доступа."
                 return@execute
             }
+            authEpoch += 1
             api.acceptAuth(result)
             authenticated = true
             userLogin = result.getString("login")
