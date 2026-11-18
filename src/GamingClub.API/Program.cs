@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
 builder.Services.AddSingleton<OccupancyStore>();
 builder.Services.AddSingleton<SessionStore>();
+builder.Services.AddSingleton<SessionExtensionStore>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -75,6 +76,15 @@ if (app.Environment.IsDevelopment())
         var clock = await store.GetClockAsync(bookingId, ct);
         return clock is null ? Results.NotFound() : Results.Ok(clock);
     }).WithName("GetDevSessionClock");
+
+    app.MapPost("/api/dev/sessions/{bookingId:int}/extend", async (int bookingId,
+        ExtendSessionRequest request, SessionExtensionStore store, CancellationToken ct) =>
+    {
+        var result = await store.ExtendAsync(bookingId, request.NewEndUtc, ct);
+        if (result.Success) return Results.Ok(result);
+        return result.Conflict ? Results.Conflict(new { error = result.Message })
+            : Results.BadRequest(new { error = result.Message });
+    }).WithName("ExtendDevSession");
 
     app.MapPost("/api/dev/sessions/{bookingId:int}/start", async (int bookingId,
         SessionStore store, CancellationToken ct) =>
