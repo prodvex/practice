@@ -1,0 +1,37 @@
+name: GamingClub SQL Server integration verification
+on:
+  push:
+    branches: [ci/sql-integration-20261118]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sql:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    services:
+      sql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "GamingClub_StrongSqlTest2026!"
+        ports:
+          - 1433:1433
+    env:
+      GAMINGCLUB_TEST_SQL_CONNECTION: "Server=localhost,1433;Database=GamingClubTest_18;User Id=sa;Password=GamingClub_StrongSqlTest2026!;Encrypt=True;TrustServerCertificate=True;Connect Timeout=8;"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Create isolated SQL Server test database and schema
+        run: dotnet run --configuration Release --project tools/GamingClub.DbBootstrap/GamingClub.DbBootstrap.csproj -- database/schema-integration-tests.sql
+      - name: Execute all SQL integration tests + gather coverage
+        run: dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --configuration Release --logger "trx;LogFileName=gamingclub-sql.trx" --collect:"XPlat Code Coverage"
+      - name: Upload real SQL results and Cobertura coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-sql-integration-results
+          path: tests/GamingClub.Tests/TestResults/
+          if-no-files-found: warn
