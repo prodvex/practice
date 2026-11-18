@@ -25,17 +25,17 @@ app.MapGet("/health", () => Results.Ok(new
 
 app.MapGet("/api/seats", async (BookingStore db, CancellationToken ct) =>
     Results.Ok(await db.GetSeatsAsync(ct)))
-    .WithName("GetSeats").WithOpenApi();
+    .WithName("GetSeats");
 
 app.MapGet("/api/tariffs", async (BookingStore db, CancellationToken ct) =>
     Results.Ok(await db.GetTariffsAsync(ct)))
-    .WithName("GetTariffs").WithOpenApi();
+    .WithName("GetTariffs");
 
 app.MapGet("/api/seats/{seatId:int}/bookings", async (int seatId, BookingStore db, CancellationToken ct) =>
 {
     if (seatId <= 0) return Results.BadRequest(new { error = "Invalid seat ID." });
     return Results.Ok(await db.GetBookingsAsync(seatId, ct));
-}).WithName("GetSeatBookings").WithOpenApi();
+}).WithName("GetSeatBookings");
 
 // No production booking endpoint is exposed before authentication is implemented.
 // This development-only endpoint is used to verify SQL transactions and concurrency.
@@ -52,7 +52,7 @@ if (app.Environment.IsDevelopment())
             BookingError.Conflict => Results.Conflict(new { error = result.Message }),
             _ => Results.Problem("Unexpected booking state.")
         };
-    }).WithName("CreateDevBooking").WithOpenApi();
+    }).WithName("CreateDevBooking");
 }
 
 app.Run();
