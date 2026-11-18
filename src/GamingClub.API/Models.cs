@@ -18,3 +18,6 @@ public enum BookingError { None, Invalid, NotFound, Conflict }
 
 /// <summary>Service operation result, including a safe HTTP-mappable error.</summary>
 public sealed record BookingResult(BookingDto? Booking, BookingError Error, string? Message = null);
+
+/// <summary>New UTC end of an ongoing game session.</summary>
+public sealed record ExtendSessionRequest(DateTimeOffset NewEndUtc);
