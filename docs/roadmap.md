@@ -5,7 +5,7 @@
 - [x] Черновое ТЗ
 - [x] SQL Server DDL и синтетический seed
 - [x] Каркас ASP.NET Core API
-- [ ] Изучение 3 аналогов по 5+ критериям
+- [x] Изучены 3 аналога (SENET, SmartShell, LANGAME) по 8 критериям, см. docs/market-analogs.md
 - [x] Исходная ER-диаграмма в Mermaid (ещё требуется экспорт в изображение для отчёта)
 - [x] Шесть SVG-макетов, дизайн-токены и HTML-прототип навигации
 - [x] Создан Figma-файл с 6 редактируемыми экранами: https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P
