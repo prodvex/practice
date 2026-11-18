@@ -27,20 +27,29 @@ class MainActivity : Activity() {
     private val timerHandler = Handler(Looper.getMainLooper())
     private var clockPolling = false
     private var loadingClock = false
+    private var sessionRunning = false
     private val clockPoll = object : Runnable {
         override fun run() {
             if (!clockPolling || isFinishing || isDestroyed) return
             val currentBooking = bookingId
             if (currentBooking != null && !loadingClock) {
                 loadingClock = true
-                execute({ api.clock(currentBooking) }) { value ->
-                    loadingClock = false
-                    if (clockPolling && bookingId == currentBooking) {
-                        val remaining = value.getInt("remainingSeconds")
-                        sessionView.text = "Сессия №${value.getInt("sessionId")}, осталось $remaining сек."
-                        if (remaining <= 0) stopClockPolling()
+                Thread {
+                    val response = runCatching { api.clock(currentBooking) }
+                    runOnUiThread {
+                        loadingClock = false
+                        if (clockPolling && bookingId == currentBooking) {
+                            response.onSuccess { value ->
+                                val remaining = value.getInt("remainingSeconds")
+                                sessionView.text = "Сессия №${value.getInt("sessionId")}, осталось $remaining сек."
+                                if (remaining <= 0) {
+                                    sessionRunning = false
+                                    stopClockPolling()
+                                }
+                            }.onFailure { status.text = "Таймер: ${it.message}" }
+                        }
                     }
-                }
+                }.start()
             }
             if (clockPolling) timerHandler.postDelayed(this, 5000)
         }
@@ -64,7 +73,7 @@ class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
-        if (::sessionView.isInitialized && bookingId != null) startClockPolling()
+        if (::sessionView.isInitialized && sessionRunning && bookingId != null) startClockPolling()
     }
 
     private fun label(value: String) = TextView(this).apply {
@@ -206,6 +215,7 @@ class MainActivity : Activity() {
         }
         execute({ api.book(uid, seat, tariff, start.toString(), end.toString()) }) { result ->
             stopClockPolling()
+            sessionRunning = false
             bookingId = result.getInt("bookingId")
             bookedEnd = end
             sessionView.text = "Бронь №$bookingId, цена ${result.getDouble("priceRub")} ₽"
@@ -222,6 +232,7 @@ class MainActivity : Activity() {
         when (action) {
             "start" -> execute({ api.startSession(id) }) {
                 status.text = "Сессия запущена"
+                sessionRunning = true
                 startClockPolling()
             }
             "clock" -> execute({ api.clock(id) }) { value ->
