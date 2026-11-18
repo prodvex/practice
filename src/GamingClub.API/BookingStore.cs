@@ -51,7 +51,7 @@ public sealed class BookingStore(IConfiguration configuration)
         await connection.OpenAsync(ct);
         const string sql = """
             SELECT b.BookingId, b.UserId, b.SeatId, b.TariffId, b.StartUtc, b.EndUtc, b.Status,
-                   (SELECT COALESCE(SUM(p.AmountRub), 0) FROM dbo.Payments p WHERE p.BookingId=b.BookingId AND p.PaymentStatus <> 'REFUNDED')
+                   (SELECT COALESCE(SUM(p.AmountRub), 0) FROM dbo.Payments p WHERE p.BookingId=b.BookingId AND p.PaymentStatus IN ('PENDING','PAID'))
             FROM dbo.Bookings b WHERE b.SeatId=@seatId ORDER BY b.StartUtc
             """;
         await using var cmd = new SqlCommand(sql, connection);
