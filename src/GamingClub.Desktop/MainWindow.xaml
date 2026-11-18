@@ -1,0 +1,39 @@
+<Window x:Class="GamingClub.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GamingClub — Администратор" Height="620" Width="920"
+        MinHeight="460" MinWidth="680" Background="#101827">
+    <DockPanel Margin="22">
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="GamingClub" Foreground="White" FontSize="28" FontWeight="Bold"/>
+            <TextBlock Text="Карта игрового зала · данные из SQL Server через API"
+                       Foreground="#AAB7CE" Margin="0,6,0,20"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <Button Content="Обновить места" Width="160" Height="34" Click="Refresh_Click"/>
+                <TextBlock x:Name="StatusText" Foreground="#BFD7F7" VerticalAlignment="Center"
+                           Margin="16,0,0,0" Text="Ожидание загрузки"/>
+            </StackPanel>
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Seats}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="138" Height="90" Margin="5" CornerRadius="9"
+                                Background="#263754" BorderBrush="#476181" BorderThickness="1">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SeatNumber, StringFormat=ПК №{0}}"
+                                           Foreground="White" FontSize="18" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding Status}" Foreground="#BFD7F7"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
