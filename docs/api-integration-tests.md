@@ -1,6 +1,6 @@
 # Интеграционные HTTP-тесты GamingClub.API
 
-В `tests/GamingClub.Tests/ApiAuthorizationIntegrationTests.cs` написаны **7 интеграционных HTTP-тестов** на базе `WebApplicationFactory<Program>`. Они запускают HTTP-конвейер ASP.NET Core в памяти и не обращаются к SQL Server.
+В `tests/GamingClub.Tests/ApiAuthorizationIntegrationTests.cs` написаны **12 интеграционных HTTP-тестов** на базе `WebApplicationFactory<Program>`. Они запускают HTTP-конвейер ASP.NET Core в памяти и не обращаются к SQL Server.
 
 ## Запуск
 
@@ -20,10 +20,15 @@ dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --collect:"XPlat Code
 5. VISITOR получает 403 на отчёт ADMIN.
 6. /api/dev/bookings отсутствует в Production (404).
 7. Некорректный токен возвращает 401.
+8. VISITOR не видит список всех бронирований.
+9. VISITOR не видит архив тарифов.
+10. VISITOR не создаёт тарифы.
+11. VISITOR не отключает тарифы.
+12. Анонимный пользователь не выгружает административный CSV.
 
 ## Что пока НЕ доказано
 
 - Тесты **не запускались**, результаты PASS/FAIL неизвестны.
 - Это HTTP-интеграция маршрутов/аутентификации, но не полноценная интеграция SQL Server.
-- Нужны отдельные SQL-тесты: успешное создание брони, конфликт интервалов, параллельные брони, продление, загрузка/CSV и откат SQL-транзакции.
+- Отдельно добавлены 10 SQL-интеграционных сценариев (см. `docs/sql-integration-tests.md`), но они ещё не запускались. HTTP-проверка операций записи с реальной базой остаётся отдельной задачей.
 - Покрытие ≥70% ещё не измерено; результаты coverage нужно приложить после локального запуска.
