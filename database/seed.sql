@@ -11,6 +11,13 @@ SELECT v.Code, v.DisplayName
 FROM (VALUES (N'VISITOR', N'Посетитель'), (N'ADMIN', N'Администратор')) v(Code, DisplayName)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.Roles r WHERE r.Code = v.Code);
 
+-- Prototype-only synthetic visitor (login is not implemented; not a usable password hash).
+-- Provision real accounts via an authenticated registration flow in a later stage.
+IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Login = N'demo_241810')
+    INSERT dbo.Users(RoleId, Login, PasswordHash, DisplayName)
+    SELECT RoleId, N'demo_241810', N'NO_LOGIN_PROTOTYPE_ACCOUNT', N'Тестовый посетитель 241810'
+    FROM dbo.Roles WHERE Code = N'VISITOR';
+
 IF NOT EXISTS (SELECT 1 FROM dbo.Halls WHERE Name = N'Зал 18')
     INSERT INTO dbo.Halls(Name) VALUES (N'Зал 18');
 
