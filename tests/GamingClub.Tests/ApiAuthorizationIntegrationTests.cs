@@ -115,5 +115,51 @@ public sealed class ApiAuthorizationIntegrationTests : IClassFixture<ApiAuthoriz
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/me")).StatusCode);
     }
 
+    [Fact]
+    public async Task VisitorCannotReadAllBookings()
+    {
+        SetUser("VISITOR");
+        using var response = await client.GetAsync("/api/admin/bookings");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task VisitorCannotReadArchivedTariffs()
+    {
+        SetUser("VISITOR");
+        using var response = await client.GetAsync("/api/admin/tariffs");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task VisitorCannotCreateTariff()
+    {
+        SetUser("VISITOR");
+        using var response = await client.PostAsJsonAsync("/api/admin/tariffs", new
+        {
+            name = "Unauthorized",
+            tariffType = "HOURLY",
+            priceRub = 100m
+        });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task VisitorCannotDeactivateTariff()
+    {
+        SetUser("VISITOR");
+        using var response = await client.PostAsync("/api/admin/tariffs/1/deactivate", null);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AnonymousCannotExportAdminCsv()
+    {
+        client.DefaultRequestHeaders.Authorization = null;
+        using var response = await client.GetAsync(
+            "/api/admin/reports/occupancy.csv?from=2026-11-20T14:00:00Z&to=2026-11-20T15:00:00Z");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     private sealed record HealthResult(string Service, string Status, int Variant, int Seed);
 }
