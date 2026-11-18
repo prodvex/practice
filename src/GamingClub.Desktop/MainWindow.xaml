@@ -32,12 +32,84 @@
                         <TextBox x:Name="ReportTo" Width="220" Height="30" Margin="0,0,8,0"
                                  Text="2026-11-18T13:00:00Z" ToolTip="Конец UTC"/>
                         <Button Content="Рассчитать" Width="110" Height="30" Click="Report_Click"/>
+                        <Button Content="Экспорт CSV" Width="115" Height="30"
+                                Margin="8,0,0,0" Click="ExportReport_Click"/>
                     </StackPanel>
                     <TextBlock x:Name="ReportStatus" Foreground="#BFD7F7"
                                TextWrapping="Wrap" Margin="0,8,0,0"
                                Text="Отчёт доступен только администратору после входа."/>
                 </StackPanel>
             </Border>
+            <Expander Header="Тарифы — создание и отключение" Foreground="White"
+                      Background="#1D2C44" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Foreground="#BFD7F7" TextWrapping="Wrap"
+                               Text="Создание нового тарифа не меняет условия уже существующих броней."/>
+                    <WrapPanel Margin="0,8,0,8">
+                        <TextBox x:Name="TariffNameInput" Width="170" Height="30" Margin="0,0,8,6"
+                                 ToolTip="Название тарифа" Text="Новый тариф"/>
+                        <ComboBox x:Name="TariffTypeInput" Width="145" Height="30" Margin="0,0,8,6"
+                                  SelectedIndex="0">
+                            <ComboBoxItem Content="HOURLY"/>
+                            <ComboBoxItem Content="PACKAGE"/>
+                            <ComboBoxItem Content="NIGHT"/>
+                            <ComboBoxItem Content="HAPPY_HOURS"/>
+                        </ComboBox>
+                        <TextBox x:Name="TariffPriceInput" Width="85" Height="30" Margin="0,0,8,6"
+                                 Text="120" ToolTip="Цена, руб."/>
+                        <TextBox x:Name="TariffMinutesInput" Width="100" Height="30" Margin="0,0,8,6"
+                                 Text="" ToolTip="Минуты только для PACKAGE"/>
+                        <TextBox x:Name="TariffFromInput" Width="85" Height="30" Margin="0,0,8,6"
+                                 ToolTip="Для NIGHT/HAPPY_HOURS начало HH:mm"/>
+                        <TextBox x:Name="TariffToInput" Width="85" Height="30" Margin="0,0,8,6"
+                                 ToolTip="Для NIGHT/HAPPY_HOURS конец HH:mm"/>
+                        <Button Content="Создать" Height="30" Padding="12,0" Margin="0,0,8,6"
+                                Click="CreateTariff_Click"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,0,0,8">
+                        <Button Content="Обновить тарифы" Height="30" Padding="12,0"
+                                Margin="0,0,10,0" Click="RefreshTariffs_Click"/>
+                        <TextBox x:Name="DeactivateTariffIdInput" Width="100" Height="30"
+                                 ToolTip="ID тарифа для отключения" Margin="0,0,8,0"/>
+                        <Button Content="Отключить по ID" Padding="12,0" Height="30"
+                                Click="DeactivateTariff_Click"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="TariffStatus" Foreground="#BFD7F7" TextWrapping="Wrap"
+                               Text="Тарифы доступны только администратору."/>
+                    <DataGrid x:Name="TariffsTable" Height="160" Margin="0,8,0,0"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding TariffId}" Width="50"/>
+                            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Тип" Binding="{Binding TariffType}" Width="130"/>
+                            <DataGridTextColumn Header="Руб." Binding="{Binding PriceRub}" Width="75"/>
+                            <DataGridCheckBoxColumn Header="Активен" Binding="{Binding IsActive}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Expander>
+            <Expander Header="Бронирования — последние 100 записей" Foreground="White"
+                      Background="#1D2C44" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <Button Content="Обновить бронирования" Height="30" Width="190"
+                            HorizontalAlignment="Left" Click="RefreshBookings_Click"/>
+                    <TextBlock x:Name="BookingsStatus" Foreground="#BFD7F7" Margin="0,8,0,0"
+                               Text="Требуется вход администратора."/>
+                    <DataGrid x:Name="BookingsTable" Height="210" Margin="0,8,0,0"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Бронь" Binding="{Binding BookingId}" Width="60"/>
+                            <DataGridTextColumn Header="Логин" Binding="{Binding Login}" Width="*"/>
+                            <DataGridTextColumn Header="ПК" Binding="{Binding SeatNumber}" Width="55"/>
+                            <DataGridTextColumn Header="Начало UTC" Binding="{Binding StartUtc}" Width="160"/>
+                            <DataGridTextColumn Header="Конец UTC" Binding="{Binding EndUtc}" Width="160"/>
+                            <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="90"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Expander>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                 <Button Content="Обновить места" Width="160" Height="34" Click="Refresh_Click"/>
                 <TextBlock x:Name="StatusText" Foreground="#BFD7F7" VerticalAlignment="Center"
