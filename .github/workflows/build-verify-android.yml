@@ -21,13 +21,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify preinstalled Android SDK
+      - name: Locate preinstalled Android SDK manager
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          command -v sdkmanager
-          sdkmanager --version
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)
+          test -n "$SDKMANAGER"
+          echo "SDK_MANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          "$SDKMANAGER" --version
       - name: Install API 35 and build tools
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: '"$SDK_MANAGER" "platforms;android-35" "build-tools;35.0.0"'
       - name: Install Gradle 8.10.2
         uses: gradle/actions/setup-gradle@v4
         with:
