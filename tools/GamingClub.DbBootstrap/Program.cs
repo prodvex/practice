@@ -47,4 +47,13 @@ await using var verify = new SqlCommand(
     connection);
 var count = Convert.ToInt32(await verify.ExecuteScalarAsync());
 if (count != 8) throw new InvalidOperationException($"Expected 8 tables; found {count}.");
+await using (var roles = new SqlCommand("""
+    IF NOT EXISTS (SELECT 1 FROM GamingClubTest_18.dbo.Roles WHERE Code='VISITOR')
+        INSERT GamingClubTest_18.dbo.Roles(Code,DisplayName) VALUES ('VISITOR',N'Test visitor');
+    IF NOT EXISTS (SELECT 1 FROM GamingClubTest_18.dbo.Roles WHERE Code='ADMIN')
+        INSERT GamingClubTest_18.dbo.Roles(Code,DisplayName) VALUES ('ADMIN',N'Test administrator');
+    """, connection))
+{
+    await roles.ExecuteNonQueryAsync();
+}
 Console.WriteLine($"GamingClubTest_18 initialized: {completed} batches, {count} tables.");
