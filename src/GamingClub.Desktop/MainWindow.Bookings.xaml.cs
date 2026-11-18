@@ -12,6 +12,50 @@ public partial class MainWindow
     private async void RefreshBookings_Click(object sender, RoutedEventArgs e) =>
         await RefreshBookingsAsync();
 
+
+    private async void CancelSelectedBooking_Click(object sender, RoutedEventArgs e)
+    {
+        if (!isAdmin)
+        {
+            BookingsStatus.Text = "Для отмены войдите как ADMIN.";
+            return;
+        }
+        if (BookingsTable.SelectedItem is not AdminBookingRow booking)
+        {
+            BookingsStatus.Text = "Выберите бронь в таблице.";
+            return;
+        }
+        if (booking.Status != "ACTIVE" || booking.StartUtc <= DateTime.UtcNow)
+        {
+            BookingsStatus.Text = "Можно отменять только будущую активную бронь.";
+            return;
+        }
+
+        var choice = MessageBox.Show(
+            $"Отменить бронь №{booking.BookingId} (ПК №{booking.SeatNumber})?\n" +
+            "Неоплаченные начисления будут аннулированы. Для оплаченных бронирований операция не допускается.",
+            "Подтвердите отмену", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (choice != MessageBoxResult.Yes) return;
+
+        try
+        {
+            using var request = Authorized(HttpMethod.Post,
+                $"/api/admin/bookings/{booking.BookingId}/cancel");
+            using var response = await Client.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                BookingsStatus.Text = $"Отмена отклонена: HTTP {(int)response.StatusCode}.";
+                return;
+            }
+            await RefreshBookingsAsync();
+            BookingsStatus.Text = $"Бронь №{booking.BookingId} отменена; неоплаченные счета аннулированы.";
+        }
+        catch (Exception ex)
+        {
+            BookingsStatus.Text = $"Ошибка отмены ({ex.GetType().Name}).";
+        }
+    }
+
     private async Task RefreshBookingsAsync()
     {
         if (!isAdmin) { BookingsStatus.Text = "Требуется вход администратора."; return; }
