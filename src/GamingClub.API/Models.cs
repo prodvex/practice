@@ -21,3 +21,7 @@ public sealed record BookingResult(BookingDto? Booking, BookingError Error, stri
 
 /// <summary>New UTC end of an ongoing game session.</summary>
 public sealed record ExtendSessionRequest(DateTimeOffset NewEndUtc);
+
+/// <summary>Authenticated booking request; user identity is never accepted from the client.</summary>
+public sealed record AuthenticatedBookingRequest(int SeatId, int TariffId,
+    DateTimeOffset StartUtc, DateTimeOffset EndUtc);
