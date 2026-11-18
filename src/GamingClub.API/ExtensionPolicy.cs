@@ -20,7 +20,7 @@ public static class ExtensionPolicy
             throw new ArgumentException("Only currently active sessions can be extended.");
         if (requestedEndUtc - bookedStartUtc > TimeSpan.FromDays(7))
             throw new ArgumentException("Total booking cannot exceed seven days.");
-        if (requestedEndUtc.Second != 0 || requestedEndUtc.Millisecond != 0)
+        if (requestedEndUtc.Ticks % TimeSpan.TicksPerMinute != 0)
             throw new ArgumentException("End time must be a full minute.");
 
         decimal oldPrice = PricingCalculator.Calculate(tariff, bookedStartUtc, bookedEndUtc);
