@@ -1,6 +1,7 @@
 package com.gamingclub.client
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
@@ -288,7 +289,8 @@ class MainActivity : Activity() {
                 val booking = rows.getJSONObject(i)
                 val id = booking.getInt("bookingId")
                 val to = booking.getString("endUtc")
-                myBookings.addView(Button(this).apply {
+                val row = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                row.addView(Button(this).apply {
                     text = "Бронь №$id · ПК ${booking.getInt("seatId")} · до $to"
                     setOnClickListener {
                         bookingId = id
@@ -297,6 +299,34 @@ class MainActivity : Activity() {
                         sessionAction("clock")
                     }
                 })
+                val starts = runCatching { Instant.parse(booking.getString("startUtc")) }.getOrNull()
+                if (booking.getString("status") == "ACTIVE" &&
+                    starts != null && starts.isAfter(Instant.now())) {
+                    row.addView(Button(this).apply {
+                        text = "Отменить бронь №$id"
+                        setOnClickListener {
+                            AlertDialog.Builder(this@MainActivity)
+                                .setTitle("Отмена бронирования")
+                                .setMessage("Отменить бронь №$id? Неоплаченные начисления будут аннулированы.")
+                                .setNegativeButton("Нет", null)
+                                .setPositiveButton("Отменить") { _, _ ->
+                                    execute({ api.cancelBooking(id) }) {
+                                        if (bookingId == id) {
+                                            stopClockPolling()
+                                            sessionRunning = false
+                                            bookingId = null
+                                            bookedEnd = null
+                                            sessionView.text = "Бронь №$id отменена"
+                                        }
+                                        status.text = "Бронь №$id отменена"
+                                        loadMine()
+                                    }
+                                }
+                                .show()
+                        }
+                    })
+                }
+                myBookings.addView(row)
             }
             status.text = "Найдено ваших бронирований: ${rows.length()}"
         }
