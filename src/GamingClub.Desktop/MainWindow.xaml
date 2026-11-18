@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GamingClub — Администратор" Height="620" Width="920"
         MinHeight="460" MinWidth="680" Background="#101827">
-    <DockPanel Margin="22">
-        <StackPanel DockPanel.Dock="Top">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="22">
             <TextBlock Text="GamingClub" Foreground="White" FontSize="28" FontWeight="Bold"/>
             <TextBlock Text="Карта игрового зала · данные из SQL Server через API"
                        Foreground="#AAB7CE" Margin="0,6,0,20"/>
@@ -135,8 +135,7 @@
                                Margin="0,8,0,0" Text="Введите ID брони и новую дату UTC."/>
                 </StackPanel>
             </Border>
-        </StackPanel>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <TextBlock Text="Игровые места" Foreground="White" FontSize="19" FontWeight="SemiBold" Margin="0,10,0,8"/>
             <ItemsControl ItemsSource="{Binding Seats}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -156,6 +155,6 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-        </ScrollViewer>
-    </DockPanel>
+        </StackPanel>
+    </ScrollViewer>
 </Window>
