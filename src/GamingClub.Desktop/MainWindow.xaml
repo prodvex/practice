@@ -92,8 +92,12 @@
             <Expander Header="Бронирования — последние 100 записей" Foreground="White"
                       Background="#1D2C44" Padding="10" Margin="0,0,0,10">
                 <StackPanel>
-                    <Button Content="Обновить бронирования" Height="30" Width="190"
-                            HorizontalAlignment="Left" Click="RefreshBookings_Click"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Обновить бронирования" Height="30" Width="190"
+                                Click="RefreshBookings_Click"/>
+                        <Button Content="Отменить выбранную бронь" Height="30" Width="195"
+                                Margin="10,0,0,0" Click="CancelSelectedBooking_Click"/>
+                    </StackPanel>
                     <TextBlock x:Name="BookingsStatus" Foreground="#BFD7F7" Margin="0,8,0,0"
                                Text="Требуется вход администратора."/>
                     <DataGrid x:Name="BookingsTable" Height="210" Margin="0,8,0,0"
