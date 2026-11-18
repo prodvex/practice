@@ -77,7 +77,7 @@ public sealed class BookingStore(IConfiguration configuration)
         var end = request.EndUtc.UtcDateTime;
         if (end <= start || end - start > TimeSpan.FromDays(7))
             return new(null, BookingError.Invalid, "Invalid interval (max 7 days).");
-        if (start.Second != 0 || end.Second != 0 || start.Millisecond != 0 || end.Millisecond != 0)
+        if (start.Ticks % TimeSpan.TicksPerMinute != 0 || end.Ticks % TimeSpan.TicksPerMinute != 0)
             return new(null, BookingError.Invalid, "Use full-minute timestamps.");
 
         await using var connection = new SqlConnection(ConnectionString);
