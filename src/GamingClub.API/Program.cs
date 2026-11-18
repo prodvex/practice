@@ -10,6 +10,7 @@ builder.Services.AddSingleton<SessionStore>();
 builder.Services.AddSingleton<SessionExtensionStore>();
 builder.Services.AddSingleton<AuthStore>();
 builder.Services.AddSingleton<BookingAccess>();
+builder.Services.AddSingleton<CancellationStore>();
 builder.Services.AddSingleton<AdminStore>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -95,6 +96,24 @@ app.MapPost("/api/bookings", async (AuthenticatedBookingRequest request, ClaimsP
     };
 }).RequireAuthorization();
 
+// An authenticated visitor may cancel only their own, not-yet-started booking.
+app.MapPost("/api/bookings/{bookingId:int}/cancel", async (int bookingId,
+    ClaimsPrincipal principal, BookingAccess access, CancellationStore store, CancellationToken ct) =>
+{
+    if (!int.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+    if (!await access.IsOwnerAsync(bookingId, userId, ct))
+        return Results.NotFound();
+    var result = await store.CancelAsync(bookingId, ct);
+    return result.Error switch
+    {
+        CancellationError.None => Results.Ok(result),
+        CancellationError.NotFound => Results.NotFound(new { error = result.Message }),
+        CancellationError.Conflict => Results.Conflict(new { error = result.Message }),
+        _ => Results.Problem()
+    };
+}).RequireAuthorization();
+
 app.MapGet("/api/sessions/{bookingId:int}", async (int bookingId, ClaimsPrincipal principal,
     BookingAccess access, SessionStore store, CancellationToken ct) =>
 {
@@ -141,6 +160,19 @@ app.MapGet("/api/admin/reports/occupancy", async (DateTimeOffset from, DateTimeO
 
 // Administrative endpoints: JWT ADMIN role is required on every route.
 var admin = app.MapGroup("/api/admin").RequireAuthorization(policy => policy.RequireRole("ADMIN"));
+
+admin.MapPost("/bookings/{bookingId:int}/cancel", async (int bookingId,
+    CancellationStore store, CancellationToken ct) =>
+{
+    var result = await store.CancelAsync(bookingId, ct);
+    return result.Error switch
+    {
+        CancellationError.None => Results.Ok(result),
+        CancellationError.NotFound => Results.NotFound(new { error = result.Message }),
+        CancellationError.Conflict => Results.Conflict(new { error = result.Message }),
+        _ => Results.Problem()
+    };
+});
 
 admin.MapGet("/bookings", async (AdminStore db, CancellationToken ct) =>
     Results.Ok(await db.RecentBookingsAsync(ct)));
