@@ -2,6 +2,7 @@ using GamingClub.API;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
+builder.Services.AddSingleton<OccupancyStore>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -36,6 +37,32 @@ app.MapGet("/api/seats/{seatId:int}/bookings", async (int seatId, BookingStore d
     if (seatId <= 0) return Results.BadRequest(new { error = "Invalid seat ID." });
     return Results.Ok(await db.GetBookingsAsync(seatId, ct));
 }).WithName("GetSeatBookings");
+
+// Occupancy is an administrative report. Until authorization is implemented,
+// expose it only in Development and keep the API on localhost.
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/api/dev/reports/occupancy", async (DateTimeOffset from, DateTimeOffset to,
+        OccupancyStore db, CancellationToken ct) =>
+    {
+        var start = from.UtcDateTime;
+        var end = to.UtcDateTime;
+        if (end <= start || end - start > TimeSpan.FromDays(31))
+            return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+        return Results.Ok(await db.GetReportAsync(start, end, ct));
+    }).WithName("GetDevOccupancy");
+
+    app.MapGet("/api/dev/reports/occupancy.csv", async (DateTimeOffset from, DateTimeOffset to,
+        OccupancyStore db, CancellationToken ct) =>
+    {
+        var start = from.UtcDateTime;
+        var end = to.UtcDateTime;
+        if (end <= start || end - start > TimeSpan.FromDays(31))
+            return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+        var report = await db.GetReportAsync(start, end, ct);
+        return Results.File(CsvReport.Export(report), "text/csv; charset=utf-8", "gamingclub-occupancy.csv");
+    }).WithName("ExportDevOccupancy");
+}
 
 // No production booking endpoint is exposed before authentication is implemented.
 // This development-only endpoint is used to verify SQL transactions and concurrency.
