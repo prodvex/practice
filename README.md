@@ -38,9 +38,9 @@
 2. Затем запустите `database/seed.sql` для синтетических данных.
 3. Для API требуется .NET SDK 8+ и строка подключения SQL Server: см. `docs/local-setup.md`. Для ПК-панели: `docs/admin-panel.md`.
 4. В режиме Development Swagger доступен по `/swagger`; добавлены эндпоинты мест, тарифов, просмотра бронирований и локального тестового бронирования.
-5. В `tests/` написаны 51 .NET unit-тест, 15 HTTP- и 13 SQL-интеграционных тестов. В Android-ветке написаны 31 JVM-тест для локального API-контракта и интерфейсных правил. **.NET тесты: 66 PASS, 13 SQL SKIPPED; Android: 31 PASS.** Измеренное покрытие .NET — 30,01%, ниже цели 70%. Подробности: `tests/README.md`, `docs/sql-integration-tests.md` и `docs/android-api-contract.md`.
+5. Проверены **85/85 .NET-тестов** (включая 19 SQL- и HTTP/SQL-сценариев) и **31/31 JVM-тест Android**. Покрытие строк .NET **85,05%** (734/863), покрытие ветвлений **72,25%**. См. `docs/final-acceptance-2026-11-18.md`.
 
-**Статус 18.11.2026:** **ASP.NET Core API, WPF Windows x64 и Android Debug APK реально собраны** на GitHub Actions. .NET: 66 PASS, 0 FAIL, 13 SQL SKIPPED; Android JVM: 31 PASS, 0 FAIL. Пользовательский запуск приложений с SQL и эмулятором **ещё не проверен**. Подробности и артефакты: `docs/build-results-2026-11-18.md`. Android остаётся в `feature/android-client` (draft PR №1); Production/Release-сборка Android и полная SQL-интеграция не готовы.
+**Статус 18.11.2026:** ASP.NET Core API, WPF x64 и Android Debug APK успешно собраны. APK запущен на эмуляторе Android 15; 85 .NET-тестов и 31 Android JVM-тест пройдены. PR #1 (Android) и PR #2 (SQL) **объединены с main**. Полная Android→SQL UI-приёмка и публичный Production HTTPS-хостинг пока не выполнены.
 
 ## Материалы для защиты
 
