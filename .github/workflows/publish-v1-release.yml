@@ -1,0 +1,69 @@
+name: GamingClub v1.0.0 academic release
+on:
+  push:
+    branches: [ci/publish-v1-0-0]
+permissions:
+  contents: write
+  actions: read
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Verify merged code and prior source backups
+        run: |
+          test -f mobile/GamingClub.Android/app/src/main/java/com/gamingclub/client/MainActivity.kt
+          test -f tools/GamingClub.DbBootstrap/Program.cs
+          git fetch origin             +refs/heads/backup/pre-build-2026-11-18-main:refs/remotes/origin/backup/pre-build-2026-11-18-main             +refs/heads/backup/pre-build-2026-11-18-android:refs/remotes/origin/backup/pre-build-2026-11-18-android
+      - name: Retrieve already-tested Release and Debug artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release/api release/desktop release/android release/sql-tests release/android-tests release/emulator
+          gh run download 44364018823 -R "$GITHUB_REPOSITORY" -n gamingclub-api-release -D release/api
+          gh run download 44364018823 -R "$GITHUB_REPOSITORY" -n gamingclub-desktop-win-x64 -D release/desktop
+          gh run download 44369326160 -R "$GITHUB_REPOSITORY" -n gamingclub-android-debug-apk -D release/android
+          gh run download 44369326160 -R "$GITHUB_REPOSITORY" -n gamingclub-android-test-reports -D release/android-tests
+          gh run download 44367492709 -R "$GITHUB_REPOSITORY" -n gamingclub-sql-integration-results -D release/sql-tests
+          gh run download 44369263284 -R "$GITHUB_REPOSITORY" -n gamingclub-real-emulator-screenshots -D release/emulator
+      - name: Create installable packages and unchanged source-only archives
+        run: |
+          (cd release && zip -qr GamingClub-API-Release.zip api)
+          (cd release && zip -qr GamingClub-Windows-WPF-x64-Release.zip desktop)
+          (cd release && zip -qr GamingClub-SQL-85-tests-coverage.zip sql-tests)
+          (cd release && zip -qr GamingClub-Android-31-tests.zip android-tests)
+          (cd release && zip -qr GamingClub-Emulator-Screenshots.zip emulator)
+          cp release/android/app-debug.apk release/GamingClub-Android-v1.0.0-Debug.apk
+          git archive --format=zip --output=release/GamingClub-PREBUILD-main-source.zip origin/backup/pre-build-2026-11-18-main
+          git archive --format=zip --output=release/GamingClub-PREBUILD-android-source.zip origin/backup/pre-build-2026-11-18-android
+          git archive --format=zip --output=release/GamingClub-v1.0.0-final-source.zip HEAD
+          (cd release && sha256sum GamingClub-*.zip GamingClub-*.apk > SHA256SUMS.txt)
+          ls -lh release/GamingClub-* release/SHA256SUMS.txt
+      - name: Create annotated v1.0.0 tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git rev-parse -q --verify refs/tags/v1.0.0; then
+            echo "v1.0.0 tag already exists; refusing to overwrite it."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a v1.0.0 -m "GamingClub v1.0.0 - academic demonstration, not a production service"
+          git push origin refs/tags/v1.0.0
+          cat > release/NOTES.md <<'EOF'
+          # GamingClub v1.0.0 — учебный прототип
+
+          - ASP.NET Core API .NET 8 и WPF Windows x64: Release publish прошёл.
+          - Android: **Debug APK**; 31/31 JVM-тестов PASS; Android 15 Emulator запускает MainActivity.
+          - SQL Server 2022: 85/85 .NET-тестов PASS, Cobertura **85.05% line coverage** (734/863), branches 72.25%.
+          - 6 редактируемых экранов в Figma, 37 связей Prototype.
+          - Две ZIP-копии исходников **до сборки**, не изменены.
+          - Бинарные файлы учебные. Production HTTPS, реальные платежи и полная Android→API→SQL UI-приёмка не заявлены.
+          - История коммитов отражает реальные даты; требование учебной практики о разных днях пока не подтверждено.
+          EOF
+          gh release create v1.0.0             release/GamingClub-API-Release.zip             release/GamingClub-Windows-WPF-x64-Release.zip             release/GamingClub-Android-v1.0.0-Debug.apk             release/GamingClub-SQL-85-tests-coverage.zip             release/GamingClub-Android-31-tests.zip             release/GamingClub-Emulator-Screenshots.zip             release/GamingClub-PREBUILD-main-source.zip             release/GamingClub-PREBUILD-android-source.zip             release/GamingClub-v1.0.0-final-source.zip             release/SHA256SUMS.txt             --repo "$GITHUB_REPOSITORY"             --title "GamingClub v1.0.0 — учебный прототип"             --notes-file release/NOTES.md
