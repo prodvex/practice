@@ -76,13 +76,14 @@ app.MapGet("/api/bookings/mine", async (ClaimsPrincipal principal, BookingAccess
     return Results.Ok(await db.MineAsync(userId, ct));
 }).RequireAuthorization();
 
-app.MapPost("/api/bookings", async (CreateBookingRequest request, ClaimsPrincipal principal,
+app.MapPost("/api/bookings", async (AuthenticatedBookingRequest request, ClaimsPrincipal principal,
     BookingStore db, CancellationToken ct) =>
 {
     if (!int.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         return Results.Unauthorized();
     // Never trust a client-supplied UserId.
-    var result = await db.CreateAsync(request with { UserId = userId }, ct);
+    var result = await db.CreateAsync(new CreateBookingRequest(userId, request.SeatId, request.TariffId,
+        request.StartUtc, request.EndUtc), ct);
     return result.Error switch
     {
         BookingError.None => Results.Ok(result.Booking),
