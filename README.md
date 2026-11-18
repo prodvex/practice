@@ -45,7 +45,8 @@
 ## Материалы для защиты
 
 - `docs/architecture.md` — компонентная схема и последовательности бронирования/отмены.
-- `docs/design/` — шесть SVG-макетов, кликабельный `prototype.html` и файл `figma-handoff.json` (не Figma-файл и не реальные скриншоты Android).
+- **Figma:** https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P — шесть редактируемых Android-экранов; переходы Figma Prototype ещё не настроены.
+- `docs/design/` — оригинальные SVG-макеты, кликабельный локальный `prototype.html` и `figma-handoff.json` (не реальные скриншоты Android).
 - `docs/static-qa-review.md` — результаты ручной статической ревизии и ограничения.
 - `.github/workflows/manual-build.yml` — запуск проверок через Actions **только вручную**.
 - `docs/defense-demo.md` — сценарий будущей защиты и список доказательств.
