@@ -88,7 +88,7 @@ CREATE TABLE dbo.Payments (
     AmountRub DECIMAL(10,2) NOT NULL CHECK (AmountRub >= 0),
     PaidUtc DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME(),
     PaymentStatus VARCHAR(16) NOT NULL,
-    CONSTRAINT CK_Payments_Status CHECK (PaymentStatus IN ('PENDING','PAID','REFUNDED'))
+    CONSTRAINT CK_Payments_Status CHECK (PaymentStatus IN ('PENDING','PAID','REFUNDED','VOID'))
 );
 GO
 -- WARNING: the index above does NOT itself prevent overlapping bookings.
