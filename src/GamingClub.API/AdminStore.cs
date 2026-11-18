@@ -7,6 +7,10 @@ namespace GamingClub.API;
 public sealed record AdminBookingDto(int BookingId, int UserId, string Login,
     int SeatId, int SeatNumber, int TariffId, DateTime StartUtc, DateTime EndUtc, string Status);
 
+public sealed record AdminTariffDto(int TariffId, string Name, string TariffType,
+    decimal PriceRub, int? PackageMinutes, TimeSpan? StartLocalTime,
+    TimeSpan? EndLocalTime, bool IsActive);
+
 public sealed record CreateTariffRequest(string Name, string TariffType, decimal PriceRub,
     int? PackageMinutes, string? StartLocalTime, string? EndLocalTime);
 
@@ -41,6 +45,27 @@ public sealed class AdminStore(IConfiguration configuration)
                 DateTime.SpecifyKind(reader.GetDateTime(7), DateTimeKind.Utc),
                 reader.GetString(8)));
         return bookings;
+    }
+
+    public async Task<IReadOnlyList<AdminTariffDto>> AllTariffsAsync(CancellationToken ct)
+    {
+        var tariffs = new List<AdminTariffDto>();
+        await using var connection = new SqlConnection(ConnectionString);
+        await connection.OpenAsync(ct);
+        const string sql = """
+            SELECT TariffId, Name, TariffType, PriceRub,
+                   PackageMinutes, StartLocalTime, EndLocalTime, IsActive
+            FROM dbo.Tariffs ORDER BY TariffId DESC
+            """;
+        await using var cmd = new SqlCommand(sql, connection);
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+            tariffs.Add(new AdminTariffDto(reader.GetInt32(0), reader.GetString(1),
+                reader.GetString(2), reader.GetDecimal(3),
+                reader.IsDBNull(4) ? null : reader.GetInt32(4),
+                reader.IsDBNull(5) ? null : reader.GetTimeSpan(5),
+                reader.IsDBNull(6) ? null : reader.GetTimeSpan(6), reader.GetBoolean(7)));
+        return tariffs;
     }
 
     /// <summary>
