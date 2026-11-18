@@ -21,7 +21,7 @@ public sealed class SessionExtensionStore(IConfiguration configuration)
     {
         if (bookingId <= 0) return new(false, "Booking ID must be positive.");
         var requestedEnd = newEnd.UtcDateTime;
-        if (requestedEnd.Second != 0 || requestedEnd.Millisecond != 0)
+        if (requestedEnd.Ticks % TimeSpan.TicksPerMinute != 0)
             return new(false, "End time must be a full minute.");
 
         await using var connection = new SqlConnection(ConnectionString);
