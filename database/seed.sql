@@ -21,7 +21,7 @@ DECLARE @HallId INT = (SELECT HallId FROM dbo.Halls WHERE Name = N'Зал 18');
     UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12
 )
 INSERT INTO dbo.Seats(HallId, SeatNumber, PosX, PosY)
-SELECT @HallId, n, ((n-1)%4)*120+20, ((n-1)/4)*100+20
+SELECT @HallId, n, ((n-1)%4)*120+20+(@Seed%7), ((n-1)/4)*100+20+(@Seed%11)
 FROM Numbers
 WHERE NOT EXISTS (SELECT 1 FROM dbo.Seats s WHERE s.HallId=@HallId AND s.SeatNumber=n);
 
@@ -35,8 +35,8 @@ FROM (VALUES
 ) v(Name, TariffType, PriceRub, PackageMinutes, StartLocalTime, EndLocalTime)
 WHERE NOT EXISTS (SELECT 1 FROM dbo.Tariffs t WHERE t.Name=v.Name);
 
--- The seed also affects synthetic sample identifiers, not only a log line.
--- Here: deterministic seat labels via positional order; dataset is repeatable.
+-- The seed deterministically offsets demo hall coordinates, so changing it changes data.
+-- The dataset remains repeatable for a given seed.
 SELECT @Seed AS Seed, s.SeatNumber, s.PosX, s.PosY
 FROM dbo.Seats s WHERE s.HallId=@HallId ORDER BY s.SeatNumber;
 GO
