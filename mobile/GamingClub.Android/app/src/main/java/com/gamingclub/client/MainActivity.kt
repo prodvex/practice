@@ -167,7 +167,7 @@ class MainActivity : Activity() {
             setPadding(ClubUi.dp(this@MainActivity, 2), 0,
                 ClubUi.dp(this@MainActivity, 2), 0)
         }
-        contentScroll.addView(content, ScrollView.LayoutParams(-1, -2))
+        contentScroll.addView(content, android.widget.FrameLayout.LayoutParams(-1, -2))
         val nav = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             ClubUi.card(this)
