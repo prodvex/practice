@@ -15,7 +15,7 @@ public static class CsvReport
             .Append(report.SeatCount).Append(';')
             .Append(report.ReservedMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(';')
             .Append(report.CapacityMinutes.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(';')
-            .Append(report.OccupancyPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append(';')
+            .Append(report.OccupancyPercent.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)).Append(';')
             .Append("241810").AppendLine();
         return new UTF8Encoding(true).GetPreamble().Concat(new UTF8Encoding(false).GetBytes(csv.ToString())).ToArray();
     }
