@@ -68,6 +68,9 @@ class GamingClubApi(private val baseUrl: String) {
             put("endUtc", toUtc)
         }))
 
+    fun cancelBooking(bookingId: Int): JSONObject =
+        JSONObject(request("POST", "/api/bookings/$bookingId/cancel", JSONObject()))
+
     fun startSession(bookingId: Int) =
         JSONObject(request("POST", "/api/sessions/$bookingId/start", JSONObject()))
 
