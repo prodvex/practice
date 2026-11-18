@@ -65,6 +65,14 @@ public class ExtensionPolicyTests
             ExtensionPolicy.CalculateExtra(Hourly, Start, At(60), At(90).AddSeconds(1), At(30)));
 
     [Fact]
+    public void SubMillisecondExtensionEnd_IsRejected()
+    {
+        // DATETIME2(0) would round this away; validation must reject it.
+        Assert.Throws<ArgumentException>(() =>
+            ExtensionPolicy.CalculateExtra(Hourly, Start, At(60), At(90).AddTicks(1), At(30)));
+    }
+
+    [Fact]
     public void NonUtcEnd_IsRejected() =>
         Assert.Throws<ArgumentException>(() =>
             ExtensionPolicy.CalculateExtra(Hourly, Start, At(60),
