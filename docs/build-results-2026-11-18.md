@@ -42,9 +42,27 @@
 
 Полное требование покрытия ≥70% **ещё не выполнено**. Большая часть SQL-зависимых классов не покрыта при пропуске SQL-интеграционных тестов. Эта метрика должна пересчитываться после реального SQL-прогона.
 
-## Android
+## Android (подтверждено успешно)
 
-Проверка Android вынесена в ветку `ci/build-check-android-20261118` и соответствующие GitHub Actions. Первые попытки обнаружили проблемы окружения Android SDK и компиляции Kotlin. Окончательный результат последнего прогона нужно дополнить после завершения.
+Успешный прогон: https://github.com/prodvex/practice/actions/runs/44364474968
+
+| Компонент | Результат |
+|---|---|
+| Android SDK 35 + Java 17 + Gradle 8.10.2 | **PASS**, на GitHub Ubuntu runner |
+| `gradle :app:assembleDebug` | **PASS**, получен `app-debug.apk` (849 788 байт) |
+| `gradle :app:testDebugUnitTest` | **PASS**, все **31** JVM-тест пройдены |
+| Результаты Android на эмуляторе | **NOT RUN** — APK ещё не установлен и UI не проверен |
+
+APK и отчёты скомпилированы в отдельной ветке проверки `ci/build-check-android-20261118`. Артефакты GitHub Actions: `gamingclub-android-debug-apk`, `gamingclub-android-test-reports`.
+
+### Реальные ошибки Android, найденные и исправленные
+
+1. `android-actions/setup-android@v3` завершался ошибкой установки устаревшего SDK-пакета `tools`. Workflow переключён на встроенный `sdkmanager` Ubuntu runner, найденный по пути в `ANDROID_HOME`.
+2. `sdkmanager` отсутствовал в `PATH`, поэтому путь вычисляется через `find "$ANDROID_HOME/cmdline-tools" -name sdkmanager`.
+3. Kotlin-компиляция выявила `Unresolved reference 'LayoutParams'` в `MainActivity.kt`. Вместо `ScrollView.LayoutParams` теперь используется `android.widget.FrameLayout.LayoutParams`. Исправление сохранено также в `feature/android-client`.
+4. После этих исправлений APK собрался, 31 JVM-тест прошёл.
+
+**Внимание:** это **Debug APK**, использующий эмуляторный локальный HTTP API `10.0.2.2:5080`, не публикационная версия. Настоящее устройство/production требует HTTPS и иного адреса сервера.
 
 ## Что сборка не доказывает
 
