@@ -37,4 +37,4 @@ Android Studio / Kotlin, ветка `feature/android-client`, draft PR №1. **�
 - Для безопасного production необходимо HTTPS, доработка авторизации, rate limiting, интеграционные и UI-тесты.
 
 
-Для защиты подготовлены макеты шести разделов: `docs/design/screens.md` и SVG в `docs/design/` (они находятся в основной ветке). Это макеты для Figma, не снимки реально собранного APK.
+Для защиты есть настоящая Figma-доска с шестью редактируемыми экранами и Prototype-переходами: https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P. SVG-оригиналы и локальный HTML-прототип находятся в основной ветке `docs/design/`. Это макеты, не скриншоты реально собранного APK.
