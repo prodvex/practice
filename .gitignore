@@ -1,0 +1,27 @@
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+# Android / Gradle
+.gradle/
+.idea/
+local.properties
+**/build/
+*.iml
+*.apk
+*.aab
+# Secrets
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+secrets.json
+# OS
+.DS_Store
+Thumbs.db
