@@ -250,7 +250,10 @@ class MainActivity : Activity() {
             setTypeface(null, android.graphics.Typeface.BOLD)
         }
         booking.addView(selectedSeatText)
-        tariffsView = Spinner(this)
+        tariffsView = Spinner(this).apply {
+            setBackgroundColor(ClubUi.surface)
+            minimumHeight = ClubUi.dp(this@MainActivity, 48)
+        }
         booking.addView(tariffsView)
         val start = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(2, ChronoUnit.MINUTES)
         booking.addView(label("Начало UTC, например 2026-11-20T14:00:00Z"))
@@ -278,7 +281,12 @@ class MainActivity : Activity() {
 
         val session = screens.getValue("Сессия")
         session.addView(label("4. Текущая сессия").apply { ClubUi.label(this, heading = true) })
-        sessionView = label("Выберите бронь или создайте новую")
+        sessionView = label("Выберите бронь или создайте новую").apply {
+            textSize = 24f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(ClubUi.primary)
+            ClubUi.card(this)
+        }
         session.addView(sessionView)
         session.addView(Button(this).apply {
             ClubUi.button(this)
@@ -447,8 +455,17 @@ class MainActivity : Activity() {
                 tariffs += tariff.getInt("tariffId")
                 names += "${tariff.getString("name")} — ${tariff.getDouble("priceRub")} ₽"
             }
-            tariffsView.adapter = ArrayAdapter(this,
-                android.R.layout.simple_spinner_dropdown_item, names)
+            val adapter = object : ArrayAdapter<String>(
+                this, android.R.layout.simple_spinner_item, names) {
+                override fun getView(position: Int, oldView: android.view.View?,
+                    parent: android.view.ViewGroup): android.view.View {
+                    return super.getView(position, oldView, parent).also { view ->
+                        (view as? TextView)?.setTextColor(ClubUi.text)
+                    }
+                }
+            }
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            tariffsView.adapter = adapter
             for (i in 0 until seats.length()) {
                 val seat = seats.getJSONObject(i)
                 val id = seat.getInt("seatId")
