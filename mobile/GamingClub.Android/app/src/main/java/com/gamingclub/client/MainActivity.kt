@@ -56,7 +56,7 @@ class MainActivity : Activity() {
                         if (clockPolling && bookingId == currentBooking) {
                             response.onSuccess { value ->
                                 val remaining = value.getInt("remainingSeconds")
-                                sessionView.text = "Сессия №${value.getInt("sessionId")}\\n" +
+                                sessionView.text = "Сессия №${value.getInt("sessionId")}\n" +
                                     SessionClockFormatter.format(remaining)
                                 if (remaining <= 0) {
                                     sessionRunning = false
@@ -535,7 +535,7 @@ class MainActivity : Activity() {
                 startClockPolling()
             }
             "clock" -> execute({ api.clock(id) }) { value ->
-                sessionView.text = "Сессия №${value.getInt("sessionId")}\\n" +
+                sessionView.text = "Сессия №${value.getInt("sessionId")}\n" +
                     SessionClockFormatter.format(value.getInt("remainingSeconds"))
             }
             "extend" -> {
