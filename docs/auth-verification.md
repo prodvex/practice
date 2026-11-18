@@ -24,6 +24,7 @@
 | POST /api/auth/login | Все, с логином и паролем |
 | GET /api/me | Авторизованный пользователь |
 | GET /api/bookings/mine | Авторизованный пользователь, только свои |
+| POST /api/bookings/{id}/cancel | Только владелец брони |
 | POST /api/bookings | Авторизованный, UserId из токена |
 | GET /api/sessions/{id} | Владелец брони или ADMIN |
 | POST /api/sessions/{id}/start | Владелец брони или ADMIN |
@@ -31,6 +32,7 @@
 | GET /api/admin/reports/occupancy | Только ADMIN |
 | GET /api/admin/reports/occupancy.csv | Только ADMIN |
 | GET /api/admin/bookings | Только ADMIN |
+| POST /api/admin/bookings/{id}/cancel | Только ADMIN |
 | GET /api/admin/tariffs | Только ADMIN |
 | POST /api/admin/tariffs | Только ADMIN |
 | POST /api/admin/tariffs/{id}/deactivate | Только ADMIN |
