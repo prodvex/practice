@@ -7,23 +7,29 @@ import java.net.URL
 
 /** Small HTTP client for the local GamingClub development API. */
 class GamingClubApi(private val baseUrl: String) {
+    @Volatile
     var accessToken: String? = null
         private set
 
     fun clearToken() { accessToken = null }
 
-    fun login(login: String, password: String): JSONObject {
-        val response = JSONObject(request("POST", "/api/auth/login",
+    /**
+     * Login/register only perform HTTP work. Do not install the returned token from
+     * a background thread: the user may have logged out while that request was pending.
+     * MainActivity calls acceptAuth() only for the latest still-active attempt.
+     */
+    fun login(login: String, password: String): JSONObject =
+        JSONObject(request("POST", "/api/auth/login",
             JSONObject().put("login", login).put("password", password)))
-        accessToken = response.getString("accessToken")
-        return response
-    }
 
-    fun register(login: String, password: String, displayName: String): JSONObject {
-        val response = JSONObject(request("POST", "/api/auth/register", JSONObject()
+    fun register(login: String, password: String, displayName: String): JSONObject =
+        JSONObject(request("POST", "/api/auth/register", JSONObject()
             .put("login", login).put("password", password).put("displayName", displayName)))
-        accessToken = response.getString("accessToken")
-        return response
+
+    fun acceptAuth(response: JSONObject) {
+        val token = response.optString("accessToken")
+        require(token.isNotBlank()) { "No access token received." }
+        accessToken = token
     }
 
     fun mine(): JSONArray = JSONArray(request("GET", "/api/bookings/mine"))
@@ -34,7 +40,9 @@ class GamingClubApi(private val baseUrl: String) {
         connection.connectTimeout = 5000
         connection.readTimeout = 5000
         connection.setRequestProperty("Accept", "application/json")
-        accessToken?.let { connection.setRequestProperty("Authorization", "Bearer $it") }
+        if (!path.startsWith("/api/auth/")) {
+            accessToken?.let { connection.setRequestProperty("Authorization", "Bearer $it") }
+        }
         try {
             if (body != null) {
                 connection.doOutput = true
