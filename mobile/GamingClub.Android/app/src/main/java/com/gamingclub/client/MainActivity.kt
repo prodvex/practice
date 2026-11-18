@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Build
+import android.view.WindowInsets
 import android.os.Handler
 import android.os.Looper
 import android.widget.*
@@ -146,6 +148,19 @@ class MainActivity : Activity() {
                 ClubUi.dp(this@MainActivity, 14),
                 ClubUi.dp(this@MainActivity, 10))
         }
+        // Android 15 enables edge-to-edge by default. Reserve visible status and
+        // navigation bar insets so the title and bottom tabs are not obscured.
+        outer.setOnApplyWindowInsetsListener { view, insets ->
+            val top = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                insets.getInsets(WindowInsets.Type.statusBars()).top
+            else insets.systemWindowInsetTop
+            val bottom = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                insets.getInsets(WindowInsets.Type.navigationBars()).bottom
+            else insets.systemWindowInsetBottom
+            view.setPadding(ClubUi.dp(this, 14), top + ClubUi.dp(this, 8),
+                ClubUi.dp(this, 14), bottom + ClubUi.dp(this, 10))
+            insets
+        }
         setContentView(outer)
         outer.addView(label("GamingClub · Вариант 18").apply {
             textSize = 22f
@@ -211,7 +226,7 @@ class MainActivity : Activity() {
         loginName.hint = "Логин"
         login.addView(loginName)
         loginPassword = input("")
-        loginPassword.hint = "Пароль (не менее 12 символов для регистрации)"
+        loginPassword.hint = "Пароль (от 12 символов)"
         loginPassword.inputType = android.text.InputType.TYPE_CLASS_TEXT or
             android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
         login.addView(loginPassword)
