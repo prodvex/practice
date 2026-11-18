@@ -1,0 +1,43 @@
+{
+  "project": "GamingClub",
+  "variant": 18,
+  "purpose": "Design handoff for six Android screens; not an exported Figma .fig file",
+  "frame": { "width": 390, "height": 844, "unit": "px" },
+  "tokens": {
+    "color": {
+      "background": "#0D1728",
+      "surface": "#1B2942",
+      "surfaceRaised": "#263B55",
+      "primary": "#21B98E",
+      "primaryText": "#061A18",
+      "text": "#EEF2FF",
+      "textMuted": "#AABED8",
+      "disabled": "#6B7280",
+      "selected": "#D3B24B"
+    },
+    "cornerRadius": { "card": 14, "button": 12, "phone": 25 },
+    "spacingScale": [4, 8, 12, 16, 20, 24, 32]
+  },
+  "navigation": [
+    { "id": "login", "name": "Вход", "svg": "01-login.svg",
+      "transitions": [ { "trigger": "enter", "to": "hall" }, { "trigger": "register", "to": "hall" } ] },
+    { "id": "hall", "name": "Зал", "svg": "02-hall.svg",
+      "transitions": [ { "trigger": "selectSeat", "to": "booking" } ] },
+    { "id": "booking", "name": "Бронирование", "svg": "03-booking.svg",
+      "transitions": [ { "trigger": "confirmBooking", "to": "myBookings" } ] },
+    { "id": "myBookings", "name": "Мои брони", "svg": "04-my-bookings.svg",
+      "transitions": [ { "trigger": "openBooking", "to": "session" },
+                       { "trigger": "cancelBooking", "to": "myBookings", "notes": "Confirm first" } ] },
+    { "id": "session", "name": "Игровая сессия", "svg": "05-session.svg",
+      "transitions": [ { "trigger": "extend", "to": "session" },
+                       { "trigger": "refresh", "to": "session" } ] },
+    { "id": "profile", "name": "Профиль", "svg": "06-profile.svg",
+      "transitions": [ { "trigger": "logout", "to": "login" } ] }
+  ],
+  "commonNavigation": ["login", "hall", "booking", "myBookings", "session", "profile"],
+  "copy": {
+    "hallActiveMeaning": "Seat is enabled, not necessarily free at selected time",
+    "timeConvention": "UTC in the current prototype",
+    "paymentConvention": "Invoices only; no real payment gateway"
+  }
+}
