@@ -10,6 +10,7 @@ builder.Services.AddSingleton<SessionStore>();
 builder.Services.AddSingleton<SessionExtensionStore>();
 builder.Services.AddSingleton<AuthStore>();
 builder.Services.AddSingleton<BookingAccess>();
+builder.Services.AddSingleton<AdminStore>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -137,6 +138,35 @@ app.MapGet("/api/admin/reports/occupancy", async (DateTimeOffset from, DateTimeO
         return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
     return Results.Ok(await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct));
 }).RequireAuthorization(policy => policy.RequireRole("ADMIN"));
+
+// Administrative endpoints: JWT ADMIN role is required on every route.
+var admin = app.MapGroup("/api/admin").RequireAuthorization(policy => policy.RequireRole("ADMIN"));
+
+admin.MapGet("/bookings", async (AdminStore db, CancellationToken ct) =>
+    Results.Ok(await db.RecentBookingsAsync(ct)));
+
+admin.MapGet("/tariffs", async (AdminStore db, CancellationToken ct) =>
+    Results.Ok(await db.AllTariffsAsync(ct)));
+
+admin.MapPost("/tariffs", async (CreateTariffRequest request, AdminStore db, CancellationToken ct) =>
+{
+    var result = await db.CreateTariffAsync(request, ct);
+    return result.Success
+        ? Results.Created($"/api/admin/tariffs/{result.Id}", result)
+        : Results.BadRequest(new { error = result.Message });
+});
+
+admin.MapPost("/tariffs/{tariffId:int}/deactivate", async (int tariffId, AdminStore db, CancellationToken ct) =>
+    await db.DeactivateTariffAsync(tariffId, ct) ? Results.NoContent() : Results.NotFound());
+
+admin.MapGet("/reports/occupancy.csv", async (DateTimeOffset from, DateTimeOffset to,
+    OccupancyStore db, CancellationToken ct) =>
+{
+    if (to <= from || to - from > TimeSpan.FromDays(31))
+        return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+    var report = await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct);
+    return Results.File(CsvReport.Export(report), "text/csv; charset=utf-8", "gamingclub-occupancy.csv");
+});
 
 app.MapGet("/health", () => Results.Ok(new
 {
