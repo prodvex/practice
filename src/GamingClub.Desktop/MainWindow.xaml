@@ -13,6 +13,22 @@
                 <TextBlock x:Name="StatusText" Foreground="#BFD7F7" VerticalAlignment="Center"
                            Margin="16,0,0,0" Text="Ожидание загрузки"/>
             </StackPanel>
+            <Border Background="#1D2C44" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Foreground="White" FontWeight="SemiBold"
+                               Text="Продление активной сессии (локальный Development API)"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
+                        <TextBox x:Name="BookingIdInput" Width="110" Height="30" Margin="0,0,8,0"
+                                 ToolTip="ID брони" Text="1"/>
+                        <TextBox x:Name="ExtensionTimeInput" Width="260" Height="30" Margin="0,0,8,0"
+                                 ToolTip="Новый конец в UTC, например 2026-11-20T16:00:00Z"
+                                 Text="2026-11-20T16:00:00Z"/>
+                        <Button Content="Продлить" Width="110" Height="30" Click="Extend_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="ExtensionStatus" Foreground="#BFD7F7" TextWrapping="Wrap"
+                               Margin="0,8,0,0" Text="Введите ID брони и новую дату UTC."/>
+                </StackPanel>
+            </Border>
         </StackPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding Seats}">
