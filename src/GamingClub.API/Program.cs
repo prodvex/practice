@@ -32,12 +32,6 @@ app.MapGet("/api/tariffs", async (BookingStore db, CancellationToken ct) =>
     Results.Ok(await db.GetTariffsAsync(ct)))
     .WithName("GetTariffs");
 
-app.MapGet("/api/seats/{seatId:int}/bookings", async (int seatId, BookingStore db, CancellationToken ct) =>
-{
-    if (seatId <= 0) return Results.BadRequest(new { error = "Invalid seat ID." });
-    return Results.Ok(await db.GetBookingsAsync(seatId, ct));
-}).WithName("GetSeatBookings");
-
 // Occupancy is an administrative report. Until authorization is implemented,
 // expose it only in Development and keep the API on localhost.
 if (app.Environment.IsDevelopment())
@@ -68,6 +62,12 @@ if (app.Environment.IsDevelopment())
 // This development-only endpoint is used to verify SQL transactions and concurrency.
 if (app.Environment.IsDevelopment())
 {
+    app.MapGet("/api/dev/seats/{seatId:int}/bookings", async (int seatId, BookingStore db, CancellationToken ct) =>
+    {
+        if (seatId <= 0) return Results.BadRequest(new { error = "Invalid seat ID." });
+        return Results.Ok(await db.GetBookingsAsync(seatId, ct));
+    }).WithName("GetDevSeatBookings");
+
     app.MapPost("/api/dev/bookings", async (CreateBookingRequest input, BookingStore db, CancellationToken ct) =>
     {
         var result = await db.CreateAsync(input, ct);
