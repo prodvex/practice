@@ -32,6 +32,9 @@ android {
 }
 
 dependencies {
-    // JVM-only tests for date rules and stale authentication callbacks.
+    // Local JVM tests: no emulator or SQL Server needed.
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    // Use a real JSON implementation, not android.jar's nonfunctional test stubs.
+    testImplementation("org.json:json:20240303")
 }
