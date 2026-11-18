@@ -29,6 +29,11 @@
 | POST /api/sessions/{id}/start | Владелец брони или ADMIN |
 | POST /api/sessions/{id}/extend | Владелец брони или ADMIN |
 | GET /api/admin/reports/occupancy | Только ADMIN |
+| GET /api/admin/reports/occupancy.csv | Только ADMIN |
+| GET /api/admin/bookings | Только ADMIN |
+| GET /api/admin/tariffs | Только ADMIN |
+| POST /api/admin/tariffs | Только ADMIN |
+| POST /api/admin/tariffs/{id}/deactivate | Только ADMIN |
 
 Роль `ADMIN` не выдаётся при саморегистрации. Назначать её должен уполномоченный администратор через защищённую процедуру, которую ещё необходимо реализовать. Для учебного испытания роль можно назначить вручную в локальной БД после проверки пользователя, но не выполнять такую операцию в открытом API.
 
