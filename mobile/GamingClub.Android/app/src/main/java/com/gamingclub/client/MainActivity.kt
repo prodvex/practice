@@ -13,6 +13,15 @@ import java.time.temporal.ChronoUnit
 class MainActivity : Activity() {
     private val api by lazy { GamingClubApi(BuildConfig.API_BASE_URL) }
     private lateinit var status: TextView
+    private lateinit var loginName: EditText
+    private lateinit var loginPassword: EditText
+    private lateinit var displayName: EditText
+    private lateinit var myBookings: LinearLayout
+    private lateinit var profileText: TextView
+    private var authenticated = false
+    private var userLogin = ""
+    private var userRole = ""
+    private val screens = linkedMapOf<String, LinearLayout>()
     private lateinit var seatsView: LinearLayout
     private lateinit var hallPlan: HallPlanView
     private lateinit var sessionView: TextView
@@ -104,67 +113,197 @@ class MainActivity : Activity() {
             setContentView(label("Тестовый клиент доступен только в Debug."))
             return
         }
-        val root = LinearLayout(this).apply {
+        val outer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.rgb(18, 25, 40))
-            setPadding(24, 24, 24, 24)
+            setPadding(14, 14, 14, 14)
         }
+        setContentView(outer)
+        outer.addView(label("GamingClub · Вариант 18"))
+        status = label("Войдите или зарегистрируйтесь")
+        outer.addView(status)
+        val nav = HorizontalScrollView(this)
+        val navButtons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        nav.addView(navButtons)
+        outer.addView(nav)
         val scroll = ScrollView(this)
-        scroll.addView(root)
-        setContentView(scroll)
-        root.addView(label("GamingClub · Вариант 18"))
-        status = label("Подключаемся к серверу...")
-        root.addView(status)
-        root.addView(label("1. Выбор игрового места"))
-        root.addView(Button(this).apply {
+        outer.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        scroll.addView(content)
+        val labels = listOf(
+            "Вход", "Зал", "Бронирование", "Мои брони", "Сессия", "Профиль"
+        )
+        for (name in labels) {
+            screens[name] = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            content.addView(screens.getValue(name))
+            navButtons.addView(Button(this).apply {
+                text = name
+                setOnClickListener {
+                    if (!authenticated && name != "Вход") {
+                        status.text = "Сначала войдите в аккаунт"
+                        showScreen("Вход")
+                    } else {
+                        showScreen(name)
+                        if (name == "Мои брони") loadMine()
+                    }
+                }
+            })
+        }
+        val login = screens.getValue("Вход")
+        login.addView(label("Войти / зарегистрироваться"))
+        loginName = input("")
+        loginName.hint = "Логин"
+        login.addView(loginName)
+        loginPassword = input("")
+        loginPassword.hint = "Пароль (не менее 12 символов для регистрации)"
+        loginPassword.inputType = android.text.InputType.TYPE_CLASS_TEXT or
+            android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        login.addView(loginPassword)
+        displayName = input("")
+        displayName.hint = "Имя для регистрации"
+        login.addView(displayName)
+        login.addView(Button(this).apply {
+            text = "Войти"
+            setOnClickListener { authenticate(false) }
+        })
+        login.addView(Button(this).apply {
+            text = "Создать аккаунт посетителя"
+            setOnClickListener { authenticate(true) }
+        })
+
+        val hall = screens.getValue("Зал")
+        hall.addView(label("1. Схема зала"))
+        hall.addView(Button(this).apply {
             text = "Обновить зал"
             setOnClickListener { refresh() }
         })
         hallPlan = HallPlanView(this).apply {
             onSeatSelected = { id, number ->
                 seatId = id
-                status.text = "Выбран ПК №$number. Доступность на время брони проверяет сервер."
+                status.text = "Выбран ПК №$number. Доступность проверит сервер."
+                showScreen("Бронирование")
             }
         }
-        root.addView(hallPlan)
-        root.addView(label("Зелёный — включён; серый — отключён; жёлтый — выбран. Занятость проверяется при бронировании."))
+        hall.addView(hallPlan)
+        hall.addView(label("Зелёный — активен, серый — отключён, жёлтый — выбран."))
         seatsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        root.addView(seatsView)
-        root.addView(label("2. Бронирование"))
-        root.addView(label("ID пользователя из SQL Server"))
-        userId = input("1")
-        userId.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        root.addView(userId)
+        hall.addView(seatsView)
+
+        val booking = screens.getValue("Бронирование")
+        booking.addView(label("2. Выбор тарифа и времени UTC"))
+        userId = input("0")
+        userId.visibility = android.view.View.GONE // Identity comes from JWT, not this field.
+        booking.addView(userId)
         tariffsView = Spinner(this)
-        root.addView(tariffsView)
+        booking.addView(tariffsView)
         val start = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(2, ChronoUnit.MINUTES)
-        root.addView(label("Начало UTC (ISO 8601)"))
+        booking.addView(label("Начало UTC, например 2026-11-20T14:00:00Z"))
         startUtc = input(start.toString())
-        root.addView(startUtc)
-        root.addView(label("Конец UTC (ISO 8601)"))
+        booking.addView(startUtc)
+        booking.addView(label("Конец UTC"))
         endUtc = input(start.plus(1, ChronoUnit.HOURS).toString())
-        root.addView(endUtc)
-        root.addView(Button(this).apply {
-            text = "Забронировать"
+        booking.addView(endUtc)
+        booking.addView(Button(this).apply {
+            text = "Забронировать выбранный ПК"
             setOnClickListener { book() }
         })
-        root.addView(label("3. Управление сессией"))
-        sessionView = label("Бронирование ещё не создано")
-        root.addView(sessionView)
-        root.addView(Button(this).apply {
+
+        val mine = screens.getValue("Мои брони")
+        mine.addView(label("3. Мои бронирования"))
+        mine.addView(Button(this).apply {
+            text = "Обновить список"
+            setOnClickListener { loadMine() }
+        })
+        myBookings = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        mine.addView(myBookings)
+
+        val session = screens.getValue("Сессия")
+        session.addView(label("4. Текущая сессия"))
+        sessionView = label("Выберите бронь или создайте новую")
+        session.addView(sessionView)
+        session.addView(Button(this).apply {
             text = "Запустить сессию"
             setOnClickListener { sessionAction("start") }
         })
-        root.addView(Button(this).apply {
+        session.addView(Button(this).apply {
             text = "Обновить таймер"
             setOnClickListener { sessionAction("clock") }
         })
-        root.addView(Button(this).apply {
+        session.addView(Button(this).apply {
             text = "Продлить на 30 минут"
             setOnClickListener { sessionAction("extend") }
         })
-        root.addView(label("Учебный прототип: нет регистрации, оплаты и автоматического обновления таймера."))
-        refresh()
+
+        val profile = screens.getValue("Профиль")
+        profile.addView(label("5. Профиль"))
+        profileText = label("Вы не вошли")
+        profile.addView(profileText)
+        profile.addView(Button(this).apply {
+            text = "Выйти"
+            setOnClickListener {
+                stopClockPolling()
+                api.clearToken()
+                authenticated = false
+                bookingId = null
+                bookedEnd = null
+                userLogin = ""
+                userRole = ""
+                profileText.text = "Вы не вошли"
+                status.text = "Сессия входа завершена"
+                showScreen("Вход")
+            }
+        })
+        showScreen("Вход")
+    }
+
+    private fun showScreen(name: String) {
+        screens.forEach { (key, view) ->
+            view.visibility = if (key == name) android.view.View.VISIBLE else android.view.View.GONE
+        }
+    }
+
+    private fun authenticate(register: Boolean) {
+        val login = loginName.text.toString().trim()
+        val password = loginPassword.text.toString()
+        val name = displayName.text.toString().trim()
+        if (login.isBlank() || password.isBlank() || (register && name.isBlank())) {
+            status.text = "Заполните обязательные поля"
+            return
+        }
+        execute({
+            if (register) api.register(login, password, name) else api.login(login, password)
+        }) { result ->
+            authenticated = true
+            userLogin = result.getString("login")
+            userRole = result.getString("role")
+            profileText.text = "Логин: $userLogin · Роль: $userRole"
+            loginPassword.text.clear()
+            status.text = "Вход выполнен: $userLogin"
+            showScreen("Зал")
+            refresh()
+        }
+    }
+
+    private fun loadMine() {
+        if (!authenticated) return
+        execute({ api.mine() }) { rows ->
+            myBookings.removeAllViews()
+            for (i in 0 until rows.length()) {
+                val booking = rows.getJSONObject(i)
+                val id = booking.getInt("bookingId")
+                val to = booking.getString("endUtc")
+                myBookings.addView(Button(this).apply {
+                    text = "Бронь №$id · ПК ${booking.getInt("seatId")} · до $to"
+                    setOnClickListener {
+                        bookingId = id
+                        bookedEnd = runCatching { Instant.parse(to) }.getOrNull()
+                        showScreen("Сессия")
+                        sessionAction("clock")
+                    }
+                })
+            }
+            status.text = "Найдено ваших бронирований: ${rows.length()}"
+        }
     }
 
     private fun refresh() {
@@ -202,11 +341,11 @@ class MainActivity : Activity() {
 
     private fun book() {
         val seat = seatId
-        val uid = userId.text.toString().toIntOrNull()
+        val uid = 1 // Ignored by API: server gets the actual user ID from JWT.
         val tariff = tariffs.getOrNull(tariffsView.selectedItemPosition)
         val start = runCatching { Instant.parse(startUtc.text.toString()) }.getOrNull()
         val end = runCatching { Instant.parse(endUtc.text.toString()) }.getOrNull()
-        if (seat == null || uid == null || uid <= 0 || tariff == null ||
+        if (seat == null || tariff == null ||
             start == null || end == null || end <= start ||
             start.truncatedTo(ChronoUnit.MINUTES) != start ||
             end.truncatedTo(ChronoUnit.MINUTES) != end) {
@@ -220,6 +359,7 @@ class MainActivity : Activity() {
             bookedEnd = end
             sessionView.text = "Бронь №$bookingId, цена ${result.getDouble("priceRub")} ₽"
             status.text = "Бронь успешно создана"
+            showScreen("Сессия")
         }
     }
 
