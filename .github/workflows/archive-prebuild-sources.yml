@@ -1,0 +1,37 @@
+name: GamingClub - export pre-build source backups
+
+on:
+  push:
+    branches:
+      - ci/archive-prebuild-20261118
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    name: Source-only backups from immutable pre-build branches
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download exact original backup refs
+        run: |
+          git fetch origin             +refs/heads/backup/pre-build-2026-11-18-main:refs/remotes/origin/backup/pre-build-2026-11-18-main             +refs/heads/backup/pre-build-2026-11-18-android:refs/remotes/origin/backup/pre-build-2026-11-18-android
+      - name: Archive source trees without compiling or changing them
+        run: |
+          mkdir -p archives
+          git archive --format=zip --output=archives/GamingClub-main-SOURCE-before-build.zip origin/backup/pre-build-2026-11-18-main
+          git archive --format=zip --output=archives/GamingClub-android-SOURCE-before-build.zip origin/backup/pre-build-2026-11-18-android
+          unzip -t archives/GamingClub-main-SOURCE-before-build.zip | tail -1
+          unzip -t archives/GamingClub-android-SOURCE-before-build.zip | tail -1
+          ls -lh archives
+      - name: Upload raw source-only ZIP files
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-source-backups-2026-11-18
+          path: archives/*.zip
+          if-no-files-found: error
