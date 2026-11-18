@@ -1,0 +1,52 @@
+name: GamingClub Android emulator smoke test
+on:
+  push:
+    branches: [ci/android-emulator-20261118]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  emulator:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable KVM access for Android emulator
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Install APK and launch Activity on real emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
+          script: |
+            gradle -p mobile/GamingClub.Android :app:assembleDebug --no-daemon
+            adb install -r mobile/GamingClub.Android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n com.gamingclub.client/.MainActivity
+            sleep 5
+            adb shell pidof com.gamingclub.client
+            mkdir -p artifacts/emulator
+            adb shell screencap -p /sdcard/gamingclub-login.png
+            adb pull /sdcard/gamingclub-login.png artifacts/emulator/login.png
+            adb shell input tap 155 800
+            sleep 2
+            adb shell screencap -p /sdcard/gamingclub-auth-guard.png
+            adb pull /sdcard/gamingclub-auth-guard.png artifacts/emulator/auth-guard.png
+      - name: Save actual device screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-real-emulator-screenshots
+          path: artifacts/emulator/
+          if-no-files-found: warn
