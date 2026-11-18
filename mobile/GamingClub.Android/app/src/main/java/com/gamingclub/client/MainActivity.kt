@@ -27,7 +27,7 @@ class MainActivity : Activity() {
     private var userRole = ""
     // Never accept a response from an earlier user session or a superseded login.
     private var authEpoch = 0L
-    private var authAttempt = 0L
+    private val loginGuard = AuthAttemptGuard()
     private val screens = linkedMapOf<String, LinearLayout>()
     private lateinit var seatsView: LinearLayout
     private lateinit var hallPlan: HallPlanView
@@ -324,7 +324,7 @@ class MainActivity : Activity() {
 
     private fun signOut(message: String) {
         authEpoch += 1
-        authAttempt += 1
+        loginGuard.invalidate()
         stopClockPolling()
         api.clearToken()
         authenticated = false
@@ -356,11 +356,11 @@ class MainActivity : Activity() {
             status.text = "Заполните обязательные поля"
             return
         }
-        val attempt = ++authAttempt
+        val attempt = loginGuard.begin()
         execute({
             if (register) api.register(login, password, name) else api.login(login, password)
         }) { result ->
-            if (attempt != authAttempt) return@execute
+            if (!loginGuard.isCurrent(attempt)) return@execute
             if (result.optString("accessToken").isBlank()) {
                 status.text = "Сервер не вернул токен доступа."
                 return@execute
@@ -471,22 +471,21 @@ class MainActivity : Activity() {
     }
 
     private fun book() {
-        val seat = seatId
-        val tariff = tariffs.getOrNull(tariffsView.selectedItemPosition)
-        val start = runCatching { Instant.parse(startUtc.text.toString()) }.getOrNull()
-        val end = runCatching { Instant.parse(endUtc.text.toString()) }.getOrNull()
-        if (seat == null || tariff == null ||
-            start == null || end == null || end <= start ||
-            start.truncatedTo(ChronoUnit.MINUTES) != start ||
-            end.truncatedTo(ChronoUnit.MINUTES) != end) {
-            status.text = "Выберите место, тариф и корректное UTC-время."
+        val draft = BookingDraftValidator.parse(
+            seatId, tariffs.getOrNull(tariffsView.selectedItemPosition),
+            startUtc.text.toString(), endUtc.text.toString())
+        if (draft == null) {
+            status.text = "Выберите компьютер, тариф и корректное UTC-время до 7 суток (целые минуты)."
             return
         }
-        execute({ api.book(seat, tariff, start.toString(), end.toString()) }) { result ->
+        execute({
+            api.book(draft.seatId, draft.tariffId,
+                draft.startUtc.toString(), draft.endUtc.toString())
+        }) { result ->
             stopClockPolling()
             sessionRunning = false
             bookingId = result.getInt("bookingId")
-            bookedEnd = end
+            bookedEnd = draft.endUtc
             sessionView.text = "Бронь №$bookingId, цена ${result.getDouble("priceRub")} ₽"
             status.text = "Бронь успешно создана"
             showScreen("Сессия")
