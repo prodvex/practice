@@ -41,8 +41,10 @@ dotnet run --project src/GamingClub.API --urls http://localhost:5080
 - `GET /health` — статус сервера
 - `GET /api/seats` — зал и координаты мест
 - `GET /api/tariffs` — тарифы
-- `GET /api/seats/1/bookings` — брони места
+- `GET /api/dev/seats/1/bookings` — брони места
 - `POST /api/dev/bookings` — **только локальная разработка**, не публиковать в интернет
+- `GET /api/dev/reports/occupancy` — процент загрузки за интервал UTC
+- `GET /api/dev/reports/occupancy.csv` — экспорт CSV; сценарии проверки в `docs/report-verification.md`
 
 Пример JSON для тестового бронирования (используйте реальные ID из SELECT и будущий UTC-интервал):
 
@@ -65,7 +67,7 @@ dotnet run --project src/GamingClub.API --urls http://localhost:5080
 dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --collect:"XPlat Code Coverage"
 ```
 
-Написано 17 unit-тестов алгоритма, **они пока не запущены**; покрытие не измерено.
+Написано 17 unit-тестов тарификации и 10 unit-тестов отчёта (всего 27), **они пока не запущены**; покрытие не измерено.
 Интеграционные тесты API и настоящая авторизация ещё не реализованы.
 
 ## Предупреждение
