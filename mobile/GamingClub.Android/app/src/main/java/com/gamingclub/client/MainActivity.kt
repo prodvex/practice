@@ -12,6 +12,7 @@ class MainActivity : Activity() {
     private val api by lazy { GamingClubApi(BuildConfig.API_BASE_URL) }
     private lateinit var status: TextView
     private lateinit var seatsView: LinearLayout
+    private lateinit var hallPlan: HallPlanView
     private lateinit var sessionView: TextView
     private lateinit var tariffsView: Spinner
     private lateinit var userId: EditText
@@ -66,6 +67,14 @@ class MainActivity : Activity() {
             text = "Обновить зал"
             setOnClickListener { refresh() }
         })
+        hallPlan = HallPlanView(this).apply {
+            onSeatSelected = { id, number ->
+                seatId = id
+                status.text = "Выбран ПК №$number. Доступность на время брони проверяет сервер."
+            }
+        }
+        root.addView(hallPlan)
+        root.addView(label("Зелёный — включён; серый — отключён; жёлтый — выбран. Занятость проверяется при бронировании."))
         seatsView = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(seatsView)
         root.addView(label("2. Бронирование"))
@@ -110,6 +119,7 @@ class MainActivity : Activity() {
         execute({ api.seats() to api.tariffs() }) { (seats, prices) ->
             seatsView.removeAllViews()
             seatId = null
+            hallPlan.submit(seats)
             tariffs.clear()
             val names = mutableListOf<String>()
             for (i in 0 until prices.length()) {
