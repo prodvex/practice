@@ -3,6 +3,7 @@ using GamingClub.API;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
 builder.Services.AddSingleton<OccupancyStore>();
+builder.Services.AddSingleton<SessionStore>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -67,6 +68,21 @@ if (app.Environment.IsDevelopment())
         if (seatId <= 0) return Results.BadRequest(new { error = "Invalid seat ID." });
         return Results.Ok(await db.GetBookingsAsync(seatId, ct));
     }).WithName("GetDevSeatBookings");
+
+    app.MapGet("/api/dev/sessions/{bookingId:int}", async (int bookingId,
+        SessionStore store, CancellationToken ct) =>
+    {
+        var clock = await store.GetClockAsync(bookingId, ct);
+        return clock is null ? Results.NotFound() : Results.Ok(clock);
+    }).WithName("GetDevSessionClock");
+
+    app.MapPost("/api/dev/sessions/{bookingId:int}/start", async (int bookingId,
+        SessionStore store, CancellationToken ct) =>
+    {
+        var result = await store.StartAsync(bookingId, ct);
+        return result.Success ? Results.Ok(new { message = result.Message })
+            : Results.BadRequest(new { error = result.Message });
+    }).WithName("StartDevSession");
 
     app.MapPost("/api/dev/bookings", async (CreateBookingRequest input, BookingStore db, CancellationToken ct) =>
     {
