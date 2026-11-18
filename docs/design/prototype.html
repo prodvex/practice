@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GamingClub · интерактивный макет · вариант 18</title>
+<style>
+:root {color-scheme:dark; --bg:#0b1423; --surface:#14263b; --mint:#21b98e; --fg:#e9f1ff; --muted:#abc1da}
+* {box-sizing:border-box}
+body {margin:0; font:15px/1.5 system-ui,Arial,sans-serif; background:var(--bg); color:var(--fg)}
+main {max-width:1100px;margin:0 auto;padding:24px;display:grid;grid-template-columns:minmax(230px,1fr) minmax(300px,390px);gap:38px;align-items:start}
+h1 {font-size:29px;margin:0 0 7px} p {color:var(--muted)}
+nav {display:grid;gap:8px;margin-top:26px}
+nav button {text-align:left;color:var(--fg);border:1px solid #36516d;background:var(--surface);border-radius:11px;padding:11px 14px;cursor:pointer;font:inherit}
+nav button[aria-current="page"] {border-color:var(--mint);background:#134c46}
+nav button:hover,nav button:focus-visible {outline:2px solid var(--mint)}
+.phone {width:100%;max-width:390px;position:relative;aspect-ratio:390/844;border:2px solid #465d7a;border-radius:25px;overflow:hidden;box-shadow:0 20px 50px #0008}
+.phone img {display:block;width:100%;height:100%;object-fit:fill}
+.hotspot {position:absolute;border:0;cursor:pointer;background:transparent;transition:background .15s;border-radius:7px}
+.hotspot:hover,.hotspot:focus-visible {background:#21b98e44;outline:2px solid #8ffff0;outline-offset:-2px}
+.notice {background:#19334a;border-left:3px solid var(--mint);padding:12px 15px;border-radius:8px;min-height:55px;color:#e5fbf7;margin-top:18px}
+.meta {font-size:13px;margin-top:26px}
+kbd {border:1px solid #536b83;background:#27364a;border-radius:4px;padding:1px 5px}
+@media(max-width:780px){main {grid-template-columns:1fr;padding:14px;gap:20px} .phone{margin:auto} nav{grid-template-columns:repeat(3,1fr)} nav button{font-size:13px;padding:8px}}
+</style>
+</head>
+<body>
+<main>
+<section>
+<h1>GamingClub <span style="color:#74f5cb">· 18</span></h1>
+<p>Автономный интерактивный прототип по шести SVG-макетам. Переключайте экраны в меню или нажимайте выделяемые области на макете телефона.</p>
+<nav id="screenNav" aria-label="Экраны Android-приложения"></nav>
+<div id="notice" class="notice" role="status" aria-live="polite">Выберите «Войти» на первом экране.</div>
+<p class="meta">Это <strong>макет навигации</strong>, а не работающий Android APK, не Figma-файл и не подключение к SQL Server. Все действия показывают предполагаемый пользовательский сценарий.</p>
+<p class="meta">Для импорта в Figma используйте шесть исходных SVG в этой папке; затем соедините соответствующие фреймы в режиме Prototype. <kbd>Tab</kbd> переключает интерактивные области.</p>
+</section>
+<section>
+<div class="phone" id="phone">
+<img id="screenImage" src="01-login.svg" alt="Макет экрана входа GamingClub">
+<div id="hotspots"></div>
+</div>
+</section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const screens = [
+    {name:"Вход",file:"01-login.svg",action:"Вход / регистрация",
+     hotspots:[{x:22,y:368,w:346,h:50,to:1,label:"Войти (демонстрационный переход)"},
+       {x:22,y:433,w:346,h:50,to:1,label:"Создать аккаунт (демонстрационный переход)"}]},
+    {name:"Зал",file:"02-hall.svg",action:"Выберите ПК №6 и перейдите к тарифам",
+     hotspots:[{x:121,y:354,w:75,h:81,to:2,label:"Выбрать ПК №6"},
+       {x:22,y:675,w:346,h:50,to:2,label:"Перейти к бронированию"}]},
+    {name:"Бронирование",file:"03-booking.svg",action:"Выберите время и подтвердите",
+     hotspots:[{x:22,y:672,w:346,h:50,to:3,label:"Подтвердить бронь (демонстрация)"}]},
+    {name:"Мои брони",file:"04-my-bookings.svg",action:"Откройте бронь или отмените её",
+     hotspots:[{x:22,y:161,w:346,h:105,to:4,label:"Открыть игровую сессию"},
+       {x:39,y:272,w:313,h:50,to:3,label:"Отмена будущей брони — демонстрация",note:"В реальном приложении требуется подтверждение и ответ API."}]},
+    {name:"Сессия",file:"05-session.svg",action:"Запуск, таймер и продление",
+     hotspots:[{x:22,y:571,w:346,h:50,to:4,label:"Продлить на 30 минут",note:"Демонстрация: сервер должен проверить свободное время и доплату."},
+       {x:22,y:634,w:346,h:50,to:4,label:"Обновить таймер",note:"Демонстрация: фактический таймер получает секунды через API."}]},
+    {name:"Профиль",file:"06-profile.svg",action:"Профиль и выход",
+     hotspots:[{x:22,y:540,w:346,h:50,to:0,label:"Выйти из профиля"}]}
+  ];
+  const nav=document.getElementById("screenNav");
+  const hotspots=document.getElementById("hotspots");
+  const img=document.getElementById("screenImage");
+  const notice=document.getElementById("notice");
+  let current=0;
+  function show(index,note){
+    current=index;
+    const screen=screens[index];
+    img.src=screen.file;
+    img.alt="GamingClub: "+screen.name;
+    notice.textContent=note||screen.action;
+    [...nav.children].forEach((button,i)=>button.setAttribute("aria-current",i===index?"page":"false"));
+    hotspots.replaceChildren();
+    const rects=[...screen.hotspots];
+    for(let i=0;i<screens.length;i++){
+      rects.push({x:14+i*61,y:767,w:60,h:62,to:i,label:"Панель навигации: "+screens[i].name});
+    }
+    rects.forEach(hit=>{
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="hotspot";
+      button.setAttribute("aria-label",hit.label);
+      button.title=hit.label;
+      button.style.left=(100*hit.x/390)+"%";
+      button.style.top=(100*hit.y/844)+"%";
+      button.style.width=(100*hit.w/390)+"%";
+      button.style.height=(100*hit.h/844)+"%";
+      button.addEventListener("click",()=>show(hit.to,hit.note));
+      hotspots.appendChild(button);
+    });
+  }
+  screens.forEach((screen,index)=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.textContent=(index+1)+". "+screen.name;
+    button.addEventListener("click",()=>show(index));
+    nav.appendChild(button);
+  });
+  show(0);
+})();
+</script>
+</body>
+</html>
