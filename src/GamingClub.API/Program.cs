@@ -2,6 +2,7 @@ using GamingClub.API;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
@@ -30,6 +31,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+// A small in-memory protection against repeated password attempts.
+// For multi-instance deployments use a shared limiter and trusted forwarded IPs.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 8,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -43,6 +60,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -53,7 +72,7 @@ app.MapPost("/api/auth/register", async (RegisterRequest request, AuthStore auth
     var user = outcome.User;
     return Results.Ok(new AuthResponse(tokens.Issue(user), "Bearer", 7200,
         user.UserId, user.Login, user.Role, user.DisplayName));
-}).WithName("RegisterVisitor");
+}).WithName("RegisterVisitor").RequireRateLimiting("auth");
 
 app.MapPost("/api/auth/login", async (LoginRequest request, AuthStore auth, TokenService tokens, CancellationToken ct) =>
 {
@@ -62,7 +81,7 @@ app.MapPost("/api/auth/login", async (LoginRequest request, AuthStore auth, Toke
     var user = outcome.User;
     return Results.Ok(new AuthResponse(tokens.Issue(user), "Bearer", 7200,
         user.UserId, user.Login, user.Role, user.DisplayName));
-}).WithName("LoginUser");
+}).WithName("LoginUser").RequireRateLimiting("auth");
 
 app.MapGet("/api/me", (ClaimsPrincipal principal) => Results.Ok(new
 {
