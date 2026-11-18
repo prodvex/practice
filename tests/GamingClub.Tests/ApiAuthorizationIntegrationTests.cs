@@ -161,5 +161,21 @@ public sealed class ApiAuthorizationIntegrationTests : IClassFixture<ApiAuthoriz
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task AnonymousVisitorCannotCancelBooking()
+    {
+        client.DefaultRequestHeaders.Authorization = null;
+        using var response = await client.PostAsync("/api/bookings/1/cancel", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task VisitorCannotUseAdminCancellation()
+    {
+        SetUser("VISITOR");
+        using var response = await client.PostAsync("/api/admin/bookings/1/cancel", null);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private sealed record HealthResult(string Service, string Status, int Variant, int Seed);
 }
