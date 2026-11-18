@@ -26,7 +26,6 @@ class MainActivity : Activity() {
     private lateinit var hallPlan: HallPlanView
     private lateinit var sessionView: TextView
     private lateinit var tariffsView: Spinner
-    private lateinit var userId: EditText
     private lateinit var startUtc: EditText
     private lateinit var endUtc: EditText
     private val tariffs = mutableListOf<Int>()
@@ -191,9 +190,6 @@ class MainActivity : Activity() {
 
         val booking = screens.getValue("Бронирование")
         booking.addView(label("2. Выбор тарифа и времени UTC"))
-        userId = input("0")
-        userId.visibility = android.view.View.GONE // Identity comes from JWT, not this field.
-        booking.addView(userId)
         tariffsView = Spinner(this)
         booking.addView(tariffsView)
         val start = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(2, ChronoUnit.MINUTES)
@@ -341,7 +337,6 @@ class MainActivity : Activity() {
 
     private fun book() {
         val seat = seatId
-        val uid = 1 // Ignored by API: server gets the actual user ID from JWT.
         val tariff = tariffs.getOrNull(tariffsView.selectedItemPosition)
         val start = runCatching { Instant.parse(startUtc.text.toString()) }.getOrNull()
         val end = runCatching { Instant.parse(endUtc.text.toString()) }.getOrNull()
@@ -349,10 +344,10 @@ class MainActivity : Activity() {
             start == null || end == null || end <= start ||
             start.truncatedTo(ChronoUnit.MINUTES) != start ||
             end.truncatedTo(ChronoUnit.MINUTES) != end) {
-            status.text = "Выберите место, тариф, пользователя и корректное UTC-время."
+            status.text = "Выберите место, тариф и корректное UTC-время."
             return
         }
-        execute({ api.book(uid, seat, tariff, start.toString(), end.toString()) }) { result ->
+        execute({ api.book(seat, tariff, start.toString(), end.toString()) }) { result ->
             stopClockPolling()
             sessionRunning = false
             bookingId = result.getInt("bookingId")
