@@ -235,4 +235,65 @@ public class SqlBookingIntegrationTests
             "SELECT COUNT(1) FROM dbo.Payments WHERE BookingId=@booking AND PaymentStatus='PENDING'",
             id));
     }
+    [SqlServerFact]
+    public async Task CancellingFutureBookingVoidsPendingPaymentAndReleasesSeat()
+    {
+        var s = await NewScenarioAsync();
+        var store = new BookingStore(Configuration);
+        var booking = await store.CreateAsync(Request(s, FixedStart, FixedStart.AddHours(1)),
+            CancellationToken.None);
+        Assert.Equal(BookingError.None, booking.Error);
+        var id = booking.Booking!.BookingId;
+
+        var cancellation = await new CancellationStore(Configuration).CancelAsync(
+            id, CancellationToken.None);
+        Assert.Equal(CancellationError.None, cancellation.Error);
+        Assert.Equal(1, cancellation.VoidedInvoices);
+
+        Assert.Equal(1, await CountAsync(
+            "SELECT COUNT(1) FROM dbo.Bookings WHERE BookingId=@booking AND Status='CANCELLED'", id));
+        Assert.Equal(1, await CountAsync(
+            "SELECT COUNT(1) FROM dbo.Payments WHERE BookingId=@booking AND PaymentStatus='VOID'", id));
+
+        var replacement = await store.CreateAsync(Request(s, FixedStart, FixedStart.AddHours(1)),
+            CancellationToken.None);
+        Assert.Equal(BookingError.None, replacement.Error);
+    }
+
+    [SqlServerFact]
+    public async Task CancellingTwiceReturnsConflict()
+    {
+        var s = await NewScenarioAsync();
+        var booking = await new BookingStore(Configuration).CreateAsync(
+            Request(s, FixedStart, FixedStart.AddHours(1)), CancellationToken.None);
+        var cancel = new CancellationStore(Configuration);
+        Assert.Equal(CancellationError.None,
+            (await cancel.CancelAsync(booking.Booking!.BookingId, CancellationToken.None)).Error);
+        Assert.Equal(CancellationError.Conflict,
+            (await cancel.CancelAsync(booking.Booking.BookingId, CancellationToken.None)).Error);
+    }
+
+    [SqlServerFact]
+    public async Task PaidBookingCancellationIsRefusedWithoutFakeRefund()
+    {
+        var s = await NewScenarioAsync();
+        var booking = await new BookingStore(Configuration).CreateAsync(
+            Request(s, FixedStart, FixedStart.AddHours(1)), CancellationToken.None);
+        Assert.Equal(BookingError.None, booking.Error);
+        var id = booking.Booking!.BookingId;
+        await using (var connection = await OpenSafeAsync())
+        await using (var cmd = new SqlCommand(
+            "UPDATE dbo.Payments SET PaymentStatus='PAID' WHERE BookingId=@booking", connection))
+        {
+            cmd.Parameters.Add("@booking", SqlDbType.Int).Value = id;
+            Assert.Equal(1, await cmd.ExecuteNonQueryAsync());
+        }
+        var result = await new CancellationStore(Configuration).CancelAsync(id, CancellationToken.None);
+        Assert.Equal(CancellationError.Conflict, result.Error);
+        Assert.Equal(1, await CountAsync(
+            "SELECT COUNT(1) FROM dbo.Bookings WHERE BookingId=@booking AND Status='ACTIVE'", id));
+        Assert.Equal(1, await CountAsync(
+            "SELECT COUNT(1) FROM dbo.Payments WHERE BookingId=@booking AND PaymentStatus='PAID'", id));
+    }
+
 }
