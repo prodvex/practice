@@ -45,7 +45,7 @@
 ## Материалы для защиты
 
 - `docs/architecture.md` — компонентная схема и последовательности бронирования/отмены.
-- **Figma:** https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P — шесть редактируемых Android-экранов; переходы Figma Prototype ещё не настроены.
+- **Figma:** https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P — шесть редактируемых Android-экранов; переходы Figma Prototype настроены между 6 экранами (37 реакций, просмотр Present ещё не проверен).
 - `docs/design/` — оригинальные SVG-макеты, кликабельный локальный `prototype.html` и `figma-handoff.json` (не реальные скриншоты Android).
 - `docs/static-qa-review.md` — результаты ручной статической ревизии и ограничения.
 - `.github/workflows/manual-build.yml` — запуск проверок через Actions **только вручную**.
