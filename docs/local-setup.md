@@ -21,6 +21,10 @@ SELECT SeatId, SeatNumber FROM dbo.Seats ORDER BY SeatNumber;
 SELECT TariffId, Name FROM dbo.Tariffs ORDER BY TariffId;
 ```
 
+## Миграции существующей базы
+
+Если база была создана до появления отмены бронирований, выберите `GamingClub` в SSMS и запустите `database/migrations/001_void_pending_payments.sql`. Для только что созданной базы с актуальным `schema.sql` миграция не нужна. Миграция добавляет статус `VOID` для неоплаченного счёта.
+
 ## Шаг 2: строка подключения
 Установите **локально** переменную окружения `ConnectionStrings__GamingClub`, например в PowerShell:
 
@@ -76,6 +80,10 @@ dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --collect:"XPlat Code
 ## Авторизация и роли
 
 Для JWT необходимо также локально установить `GAMINGCLUB_JWT_SECRET` (минимум 32 байта); команды, API и матрица прав описаны в `docs/auth-verification.md`. Для Android использовать регистрацию через `/api/auth/register` или вход через `/api/auth/login`. Защищённые операции должны получать заголовок `Authorization: Bearer <token>`.
+
+## Отмена бронирования
+
+После регистрации JWT-пользователя доступен `POST /api/bookings/{bookingId}/cancel`, для администратора `POST /api/admin/bookings/{bookingId}/cancel`. Проверка и ограничения описаны в `docs/cancellation-verification.md`.
 
 ## Предупреждение
 Это учебный прототип. Эндпоинт бронирования без аутентификации существует только в Development; используйте исключительно локальный адрес `localhost` и не открывайте его в публичную сеть. Следующий этап — безопасная авторизация, роли и ограничение доступа к операциям.
