@@ -1,0 +1,29 @@
+# Интеграционные HTTP-тесты GamingClub.API
+
+В `tests/GamingClub.Tests/ApiAuthorizationIntegrationTests.cs` написаны **7 интеграционных HTTP-тестов** на базе `WebApplicationFactory<Program>`. Они запускают HTTP-конвейер ASP.NET Core в памяти и не обращаются к SQL Server.
+
+## Запуск
+
+```powershell
+dotnet restore tests/GamingClub.Tests/GamingClub.Tests.csproj
+dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --collect:"XPlat Code Coverage"
+```
+
+Тестовое окружение — `Production` с отдельным фиктивным JWT-секретом, переданным через конфигурацию только в процессе теста. Секрет не используется для рабочего сервера.
+
+## Покрытые сценарии
+
+1. GET /health возвращает вариант 18 и seed 241810.
+2. GET /api/me без токена возвращает 401.
+3. POST /api/bookings без токена возвращает 401.
+4. GET /api/me с корректным JWT возвращает пользователя.
+5. VISITOR получает 403 на отчёт ADMIN.
+6. /api/dev/bookings отсутствует в Production (404).
+7. Некорректный токен возвращает 401.
+
+## Что пока НЕ доказано
+
+- Тесты **не запускались**, результаты PASS/FAIL неизвестны.
+- Это HTTP-интеграция маршрутов/аутентификации, но не полноценная интеграция SQL Server.
+- Нужны отдельные SQL-тесты: успешное создание брони, конфликт интервалов, параллельные брони, продление, загрузка/CSV и откат SQL-транзакции.
+- Покрытие ≥70% ещё не измерено; результаты coverage нужно приложить после локального запуска.
