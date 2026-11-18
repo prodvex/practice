@@ -60,9 +60,8 @@ class GamingClubApi(private val baseUrl: String) {
     fun tariffs(): JSONArray = JSONArray(request("GET", "/api/tariffs"))
 
     /** Authenticated booking; server derives ownership from the bearer token. */
-    fun book(userId: Int, seatId: Int, tariffId: Int, fromUtc: String, toUtc: String): JSONObject =
+    fun book(seatId: Int, tariffId: Int, fromUtc: String, toUtc: String): JSONObject =
         JSONObject(request("POST", "/api/bookings", JSONObject().apply {
-            put("userId", userId)
             put("seatId", seatId)
             put("tariffId", tariffId)
             put("startUtc", fromUtc)
