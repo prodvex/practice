@@ -47,14 +47,14 @@ object ClubUi {
         view.setTextColor(text)
         view.setHintTextColor(muted)
         view.textSize = 16f
-        view.isSingleLine = true
+        view.setSingleLine(true)
         view.background = drawable(view.context, surface, 12)
         view.setPadding(dp(view.context, 15), dp(view.context, 14),
             dp(view.context, 15), dp(view.context, 14))
     }
 
     fun button(view: Button, primaryAction: Boolean = true) {
-        view.isAllCaps = false
+        view.setAllCaps(false)
         view.textSize = 14f
         view.gravity = Gravity.CENTER
         view.minimumHeight = 0
@@ -68,7 +68,7 @@ object ClubUi {
     }
 
     fun navigation(view: Button, selected: Boolean) {
-        view.isAllCaps = false
+        view.setAllCaps(false)
         view.textSize = 11f
         view.gravity = Gravity.CENTER
         view.minimumHeight = 0
