@@ -241,8 +241,11 @@ class MainActivity : Activity() {
                 stopClockPolling()
                 api.clearToken()
                 authenticated = false
+                sessionRunning = false
                 bookingId = null
                 bookedEnd = null
+                myBookings.removeAllViews()
+                sessionView.text = "Войдите для просмотра сессии"
                 userLogin = ""
                 userRole = ""
                 profileText.text = "Вы не вошли"
@@ -283,7 +286,9 @@ class MainActivity : Activity() {
 
     private fun loadMine() {
         if (!authenticated) return
+        val requestedToken = api.accessToken
         execute({ api.mine() }) { rows ->
+            if (!authenticated || api.accessToken != requestedToken) return@execute
             myBookings.removeAllViews()
             for (i in 0 until rows.length()) {
                 val booking = rows.getJSONObject(i)
