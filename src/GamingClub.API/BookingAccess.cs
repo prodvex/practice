@@ -28,7 +28,7 @@ public sealed class BookingAccess(IConfiguration config)
         const string sql = """
             SELECT b.BookingId, b.UserId, b.SeatId, b.TariffId, b.StartUtc, b.EndUtc, b.Status,
                    (SELECT COALESCE(SUM(p.AmountRub),0) FROM dbo.Payments p
-                    WHERE p.BookingId=b.BookingId AND p.PaymentStatus <> 'REFUNDED')
+                    WHERE p.BookingId=b.BookingId AND p.PaymentStatus IN ('PENDING','PAID'))
             FROM dbo.Bookings b WHERE b.UserId=@user ORDER BY b.StartUtc DESC
             """;
         await using var cmd = new SqlCommand(sql, connection);
