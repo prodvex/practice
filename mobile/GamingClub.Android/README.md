@@ -1,6 +1,6 @@
 # GamingClub.Android — вариант 18
 
-**Статус:** Android Studio/Kotlin, исходники в ветке `feature/android-client`, draft PR №1. Сборка, APK, эмулятор и тесты **не запускались**.
+**Статус:** исходники в `feature/android-client`, draft PR №1. **Debug APK успешно собран** на GitHub Actions и **31 JVM-тест пройден**: https://github.com/prodvex/practice/actions/runs/44364474968. Эмулятор и реальный API/SQL ещё не запускались.
 
 [Шесть редактируемых экранов Figma](https://www.figma.com/design/Gh6UqShvMOH9IWPghqE95P) и HTML-прототип в `docs/design/prototype.html` — макеты, не скриншоты работающего приложения.
 
@@ -32,13 +32,13 @@
 - 6 тестов форматирования серверного таймера.
 - 9 контрактных HTTP-тестов на `MockWebServer`.
 
-Всего **31 написанный JVM-тест**. Для запуска в будущем: `gradle :app:testDebugUnitTest` из `mobile/GamingClub.Android` либо одноимённая задача Gradle в Android Studio. Если Gradle Wrapper будет добавлен, можно использовать `gradlew.bat`. **PASS/FAIL неизвестны** до реального запуска.
+Всего **31 JVM-тест; подтверждено 31 PASS, 0 FAIL, 0 SKIPPED** на GitHub Actions (18.11.2026). Для запуска в будущем: `gradle :app:testDebugUnitTest` из `mobile/GamingClub.Android` либо одноимённая задача Gradle в Android Studio. Если Gradle Wrapper будет добавлен, можно использовать `gradlew.bat`. Фактический результат записан в `docs/build-results-2026-11-18.md` основной ветки.
 
 Полная таблица API и тестирования — `docs/android-api-contract.md` в основной ветке.
 
 ## Открытые ограничения
 
-- Android-вёрстка, работоспособность реального API и APK пока не проверены. Дизайн может требовать коррекции после просмотра эмулятора.
+- **Компиляция Android и JVM-тесты подтверждены**, но запуск APK на эмуляторе, поведение интерфейса и связка с настоящей SQL-базой ещё не проверены.
 - Авторизация живёт только в оперативной памяти; после перезапуска Activity потребуется новый вход.
 - Вычисления стоимости, наличия места на интервал и статуса оплаты подтверждает **сервер**, а не цвет плана.
 - Нет платёжного шлюза, production HTTPS endpoint, окончательной поддержки часового пояса и тестов UI.
