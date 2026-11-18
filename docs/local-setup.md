@@ -45,6 +45,8 @@ dotnet run --project src/GamingClub.API --urls http://localhost:5080
 - `POST /api/dev/bookings` — **только локальная разработка**, не публиковать в интернет
 - `GET /api/dev/reports/occupancy` — процент загрузки за интервал UTC
 - `GET /api/dev/reports/occupancy.csv` — экспорт CSV; сценарии проверки в `docs/report-verification.md`
+- `POST /api/dev/sessions/{bookingId}/start` — запуск сессии по действующей брони
+- `GET /api/dev/sessions/{bookingId}` — оставшееся время; проверка в `docs/session-verification.md`
 
 Пример JSON для тестового бронирования (используйте реальные ID из SELECT и будущий UTC-интервал):
 
