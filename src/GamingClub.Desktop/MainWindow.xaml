@@ -8,6 +8,36 @@
             <TextBlock Text="GamingClub" Foreground="White" FontSize="28" FontWeight="Bold"/>
             <TextBlock Text="Карта игрового зала · данные из SQL Server через API"
                        Foreground="#AAB7CE" Margin="0,6,0,20"/>
+            <Border Background="#1D2C44" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Foreground="White" FontWeight="SemiBold" Text="Вход администратора"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBox x:Name="LoginInput" Width="160" Height="30" Margin="0,0,8,0"
+                                 ToolTip="Логин" />
+                        <PasswordBox x:Name="PasswordInput" Width="170" Height="30" Margin="0,0,8,0"/>
+                        <Button Content="Войти" Width="90" Height="30" Click="Login_Click"/>
+                        <Button Content="Выйти" Width="90" Height="30" Margin="8,0,0,0"
+                                Click="Logout_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="AuthStatus" Text="Не авторизован" Foreground="#BFD7F7"
+                               Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#1D2C44" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Foreground="White" FontWeight="SemiBold" Text="Загрузка игрового зала"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBox x:Name="ReportFrom" Width="220" Height="30" Margin="0,0,8,0"
+                                 Text="2026-11-18T12:00:00Z" ToolTip="Начало UTC"/>
+                        <TextBox x:Name="ReportTo" Width="220" Height="30" Margin="0,0,8,0"
+                                 Text="2026-11-18T13:00:00Z" ToolTip="Конец UTC"/>
+                        <Button Content="Рассчитать" Width="110" Height="30" Click="Report_Click"/>
+                    </StackPanel>
+                    <TextBlock x:Name="ReportStatus" Foreground="#BFD7F7"
+                               TextWrapping="Wrap" Margin="0,8,0,0"
+                               Text="Отчёт доступен только администратору после входа."/>
+                </StackPanel>
+            </Border>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                 <Button Content="Обновить места" Width="160" Height="34" Click="Refresh_Click"/>
                 <TextBlock x:Name="StatusText" Foreground="#BFD7F7" VerticalAlignment="Center"
@@ -16,7 +46,7 @@
             <Border Background="#1D2C44" CornerRadius="8" Padding="12" Margin="0,0,0,14">
                 <StackPanel>
                     <TextBlock Foreground="White" FontWeight="SemiBold"
-                               Text="Продление активной сессии (локальный Development API)"/>
+                               Text="Продление игровой сессии (требуется вход администратора)"/>
                     <StackPanel Orientation="Horizontal" Margin="0,9,0,0">
                         <TextBox x:Name="BookingIdInput" Width="110" Height="30" Margin="0,0,8,0"
                                  ToolTip="ID брони" Text="1"/>
