@@ -1,6 +1,6 @@
 # Интеграционные HTTP-тесты GamingClub.API
 
-В `tests/GamingClub.Tests/ApiAuthorizationIntegrationTests.cs` написаны **12 интеграционных HTTP-тестов** на базе `WebApplicationFactory<Program>`. Они запускают HTTP-конвейер ASP.NET Core в памяти и не обращаются к SQL Server.
+В `tests/GamingClub.Tests/ApiAuthorizationIntegrationTests.cs` написаны **14 интеграционных HTTP-тестов** на базе `WebApplicationFactory<Program>`. Они запускают HTTP-конвейер ASP.NET Core в памяти и не обращаются к SQL Server.
 
 ## Запуск
 
@@ -25,10 +25,12 @@ dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --collect:"XPlat Code
 10. VISITOR не создаёт тарифы.
 11. VISITOR не отключает тарифы.
 12. Анонимный пользователь не выгружает административный CSV.
+13. Анонимный пользователь не может отменить бронь.
+14. VISITOR не может вызвать административную отмену.
 
 ## Что пока НЕ доказано
 
 - Тесты **не запускались**, результаты PASS/FAIL неизвестны.
 - Это HTTP-интеграция маршрутов/аутентификации, но не полноценная интеграция SQL Server.
-- Отдельно добавлены 10 SQL-интеграционных сценариев (см. `docs/sql-integration-tests.md`), но они ещё не запускались. HTTP-проверка операций записи с реальной базой остаётся отдельной задачей.
+- Отдельно добавлены 13 SQL-интеграционных сценариев (см. `docs/sql-integration-tests.md`), но они ещё не запускались. HTTP-проверка операций записи с реальной базой остаётся отдельной задачей.
 - Покрытие ≥70% ещё не измерено; результаты coverage нужно приложить после локального запуска.
