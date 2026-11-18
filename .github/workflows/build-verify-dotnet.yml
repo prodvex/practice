@@ -1,0 +1,71 @@
+name: GamingClub - .NET build verification
+
+on:
+  push:
+    branches:
+      - ci/build-check-dotnet-20261118
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: ASP.NET Core API - Windows
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore API
+        run: dotnet restore src/GamingClub.API/GamingClub.API.csproj
+      - name: Build API
+        run: dotnet build src/GamingClub.API/GamingClub.API.csproj --configuration Release --no-restore
+      - name: Publish API
+        run: dotnet publish src/GamingClub.API/GamingClub.API.csproj --configuration Release --no-build --output artifacts/api
+      - name: Save API build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-api-release
+          path: artifacts/api/
+          if-no-files-found: error
+
+  desktop:
+    name: Windows WPF - Release
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish Windows desktop app
+        run: dotnet publish src/GamingClub.Desktop/GamingClub.Desktop.csproj --configuration Release --runtime win-x64 --self-contained false --output artifacts/desktop
+      - name: Save desktop build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-desktop-win-x64
+          path: artifacts/desktop/
+          if-no-files-found: error
+
+  tests:
+    name: Unit and HTTP integration tests
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run xUnit and collect code coverage
+        run: dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj --configuration Release --logger "trx;LogFileName=gamingclub.trx" --collect:"XPlat Code Coverage"
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gamingclub-dotnet-test-results
+          path: |
+            **/TestResults/
+          if-no-files-found: warn
