@@ -19,6 +19,9 @@ class MainActivity : Activity() {
     private lateinit var displayName: EditText
     private lateinit var myBookings: LinearLayout
     private lateinit var profileText: TextView
+    private lateinit var selectedSeatText: TextView
+    private lateinit var contentScroll: ScrollView
+    private val navigationButtons = linkedMapOf<String, Button>()
     private var authenticated = false
     private var userLogin = ""
     private var userRole = ""
@@ -87,14 +90,11 @@ class MainActivity : Activity() {
 
     private fun label(value: String) = TextView(this).apply {
         text = value
-        textSize = 18f
-        setTextColor(Color.WHITE)
-        setPadding(4, 12, 4, 12)
+        ClubUi.label(this)
     }
     private fun input(value: String) = EditText(this).apply {
         setText(value)
-        setTextColor(Color.WHITE)
-        setSingleLine()
+        ClubUi.input(this)
     }
     private fun <T> execute(task: () -> T, complete: (T) -> Unit) {
         Thread {
@@ -115,29 +115,58 @@ class MainActivity : Activity() {
         }
         val outer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(18, 25, 40))
-            setPadding(14, 14, 14, 14)
+            setBackgroundColor(ClubUi.background)
+            setPadding(ClubUi.dp(this@MainActivity, 14),
+                ClubUi.dp(this@MainActivity, 8),
+                ClubUi.dp(this@MainActivity, 14),
+                ClubUi.dp(this@MainActivity, 10))
         }
         setContentView(outer)
-        outer.addView(label("GamingClub · Вариант 18"))
-        status = label("Войдите или зарегистрируйтесь")
+        outer.addView(label("GamingClub · Вариант 18").apply {
+            textSize = 22f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setTextColor(ClubUi.primary)
+        })
+        status = label("Войдите или зарегистрируйтесь").apply {
+            textSize = 13f
+            setTextColor(ClubUi.muted)
+        }
         outer.addView(status)
-        val nav = HorizontalScrollView(this)
-        val navButtons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        nav.addView(navButtons)
-        outer.addView(nav)
-        val scroll = ScrollView(this)
-        outer.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        scroll.addView(content)
+        contentScroll = ScrollView(this).apply {
+            isFillViewport = true
+            clipToPadding = false
+        }
+        outer.addView(contentScroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(ClubUi.dp(this@MainActivity, 2), 0,
+                ClubUi.dp(this@MainActivity, 2), 0)
+        }
+        contentScroll.addView(content, ScrollView.LayoutParams(-1, -2))
+        val nav = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            ClubUi.card(this)
+            setPadding(ClubUi.dp(this@MainActivity, 2),
+                ClubUi.dp(this@MainActivity, 4),
+                ClubUi.dp(this@MainActivity, 2),
+                ClubUi.dp(this@MainActivity, 4))
+        }
+        outer.addView(nav, LinearLayout.LayoutParams(-1, ClubUi.dp(this, 64)))
         val labels = listOf(
             "Вход", "Зал", "Бронирование", "Мои брони", "Сессия", "Профиль"
         )
-        for (name in labels) {
-            screens[name] = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            content.addView(screens.getValue(name))
-            navButtons.addView(Button(this).apply {
-                text = name
+        val shortLabels = listOf("Вход", "Зал", "Бронь", "Мои", "Сессия", "Профиль")
+        for ((index, name) in labels.withIndex()) {
+            screens[name] = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                visibility = android.view.View.GONE
+            }
+            content.addView(screens.getValue(name),
+                LinearLayout.LayoutParams(-1, -2))
+            val tab = Button(this).apply {
+                text = shortLabels[index]
+                ClubUi.navigation(this, false)
+                contentDescription = "Раздел: $name"
                 setOnClickListener {
                     if (!authenticated && name != "Вход") {
                         status.text = "Сначала войдите в аккаунт"
@@ -147,10 +176,12 @@ class MainActivity : Activity() {
                         if (name == "Мои брони") loadMine()
                     }
                 }
-            })
+            }
+            navigationButtons[name] = tab
+            nav.addView(tab, LinearLayout.LayoutParams(0, ClubUi.dp(this, 52), 1f))
         }
         val login = screens.getValue("Вход")
-        login.addView(label("Войти / зарегистрироваться"))
+        login.addView(label("Войти / зарегистрироваться").apply { ClubUi.label(this, heading = true) })
         loginName = input("")
         loginName.hint = "Логин"
         login.addView(loginName)
@@ -163,23 +194,28 @@ class MainActivity : Activity() {
         displayName.hint = "Имя для регистрации"
         login.addView(displayName)
         login.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Войти"
             setOnClickListener { authenticate(false) }
         })
         login.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Создать аккаунт посетителя"
             setOnClickListener { authenticate(true) }
         })
 
         val hall = screens.getValue("Зал")
-        hall.addView(label("1. Схема зала"))
+        hall.addView(label("1. Схема зала").apply { ClubUi.label(this, heading = true) })
         hall.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Обновить зал"
+            ClubUi.button(this, false)
             setOnClickListener { refresh() }
         })
         hallPlan = HallPlanView(this).apply {
             onSeatSelected = { id, number ->
                 seatId = id
+                selectedSeatText.text = "Выбран ПК №$number"
                 status.text = "Выбран ПК №$number. Доступность проверит сервер."
                 showScreen("Бронирование")
             }
@@ -190,7 +226,12 @@ class MainActivity : Activity() {
         hall.addView(seatsView)
 
         val booking = screens.getValue("Бронирование")
-        booking.addView(label("2. Выбор тарифа и времени UTC"))
+        booking.addView(label("2. Выбор тарифа и времени UTC").apply { ClubUi.label(this, heading = true) })
+        selectedSeatText = label("Компьютер ещё не выбран").apply {
+            setTextColor(ClubUi.primary)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        booking.addView(selectedSeatText)
         tariffsView = Spinner(this)
         booking.addView(tariffsView)
         val start = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(2, ChronoUnit.MINUTES)
@@ -201,42 +242,51 @@ class MainActivity : Activity() {
         endUtc = input(start.plus(1, ChronoUnit.HOURS).toString())
         booking.addView(endUtc)
         booking.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Забронировать выбранный ПК"
             setOnClickListener { book() }
         })
 
         val mine = screens.getValue("Мои брони")
-        mine.addView(label("3. Мои бронирования"))
+        mine.addView(label("3. Мои бронирования").apply { ClubUi.label(this, heading = true) })
         mine.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Обновить список"
+            ClubUi.button(this, false)
             setOnClickListener { loadMine() }
         })
         myBookings = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         mine.addView(myBookings)
 
         val session = screens.getValue("Сессия")
-        session.addView(label("4. Текущая сессия"))
+        session.addView(label("4. Текущая сессия").apply { ClubUi.label(this, heading = true) })
         sessionView = label("Выберите бронь или создайте новую")
         session.addView(sessionView)
         session.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Запустить сессию"
             setOnClickListener { sessionAction("start") }
         })
         session.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Обновить таймер"
+            ClubUi.button(this, false)
             setOnClickListener { sessionAction("clock") }
         })
         session.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Продлить на 30 минут"
             setOnClickListener { sessionAction("extend") }
         })
 
         val profile = screens.getValue("Профиль")
-        profile.addView(label("5. Профиль"))
+        profile.addView(label("5. Профиль").apply { ClubUi.label(this, heading = true) })
         profileText = label("Вы не вошли")
         profile.addView(profileText)
         profile.addView(Button(this).apply {
+            ClubUi.button(this)
             text = "Выйти"
+            ClubUi.button(this, false)
             setOnClickListener {
                 stopClockPolling()
                 api.clearToken()
@@ -260,6 +310,10 @@ class MainActivity : Activity() {
         screens.forEach { (key, view) ->
             view.visibility = if (key == name) android.view.View.VISIBLE else android.view.View.GONE
         }
+        navigationButtons.forEach { (key, button) ->
+            ClubUi.navigation(button, key == name)
+        }
+        if (::contentScroll.isInitialized) contentScroll.scrollTo(0, 0)
     }
 
     private fun authenticate(register: Boolean) {
@@ -296,6 +350,7 @@ class MainActivity : Activity() {
                 val to = booking.getString("endUtc")
                 val row = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
                 row.addView(Button(this).apply {
+            ClubUi.button(this)
                     text = "Бронь №$id · ПК ${booking.getInt("seatId")} · до $to"
                     setOnClickListener {
                         bookingId = id
@@ -308,7 +363,9 @@ class MainActivity : Activity() {
                 if (booking.getString("status") == "ACTIVE" &&
                     starts != null && starts.isAfter(Instant.now())) {
                     row.addView(Button(this).apply {
+            ClubUi.button(this)
                         text = "Отменить бронь №$id"
+                        ClubUi.button(this, false)
                         setOnClickListener {
                             AlertDialog.Builder(this@MainActivity)
                                 .setTitle("Отмена бронирования")
@@ -342,6 +399,7 @@ class MainActivity : Activity() {
         execute({ api.seats() to api.tariffs() }) { (seats, prices) ->
             seatsView.removeAllViews()
             seatId = null
+            selectedSeatText.text = "Компьютер ещё не выбран"
             hallPlan.submit(seats)
             tariffs.clear()
             val names = mutableListOf<String>()
@@ -358,11 +416,14 @@ class MainActivity : Activity() {
                 val number = seat.getInt("seatNumber")
                 val active = seat.getBoolean("isActive")
                 seatsView.addView(Button(this).apply {
+            ClubUi.button(this)
                     text = "ПК №$number" + if (active) " · выбрать" else " · отключён"
                     isEnabled = active
                     setOnClickListener {
                         seatId = id
+                        selectedSeatText.text = "Выбран ПК №$number"
                         status.text = "Выбран ПК №$number. Свободное время проверит сервер."
+                        showScreen("Бронирование")
                     }
                 })
             }
