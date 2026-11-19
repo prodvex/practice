@@ -50,6 +50,7 @@ dotnet run --project src/GamingClub.API --urls http://localhost:5080
 - `GET /api/dev/reports/occupancy` — процент загрузки за интервал UTC
 - `GET /api/dev/reports/occupancy.csv` — экспорт CSV; сценарии проверки в `docs/report-verification.md`
 - `POST /api/dev/sessions/{bookingId}/start` — запуск сессии по действующей брони
+- `POST /api/dev/sessions/{bookingId}/finish` — ручное завершение сессии и перевод брони в `COMPLETED`
 - `GET /api/dev/sessions/{bookingId}` — оставшееся время; проверка в `docs/session-verification.md`
 - `POST /api/dev/sessions/{bookingId}/extend` — продление с проверкой конфликта и доплатой; проверка в `docs/extension-verification.md`
 

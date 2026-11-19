@@ -16,7 +16,7 @@
 3. Повторите запуск: ожидается HTTP 400 (сессия существует).
 4. `GET /api/dev/sessions/{bookingId}` должен вернуть `sessionId`, `startedUtc`, `endsUtc`, `remainingSeconds`.
 5. Подождите несколько секунд и повторите запрос: `remainingSeconds` должен уменьшиться.
-6. Вызовите `POST /api/dev/sessions/{bookingId}/finish` от владельца или ADMIN. Ожидается HTTP 200, `FinishedUtc` заполняется, а статус брони становится `COMPLETED`.
+6. Вызовите `POST /api/dev/sessions/{bookingId}/finish` в локальном Development API. Этот маршрут предназначен для ручной проверки и не требует JWT. Ожидается HTTP 200, `FinishedUtc` заполняется, а статус брони становится `COMPLETED`.
 7. Попробуйте запустить сессию для брони, которая ещё не началась: ожидается HTTP 400.
 8. Попробуйте запустить сессию для уже завершившейся по времени брони: ожидается HTTP 400.
 
