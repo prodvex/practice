@@ -16,6 +16,7 @@ Android-исходники объединены с `main` через PR #1; SQL/
 | Мои брони | `GET /api/bookings/mine` | Только брони владельца |
 | Отмена | `POST /api/bookings/{id}/cancel` | Владелец, будущая активная бронь |
 | Старт сеанса | `POST /api/sessions/{id}/start` | Владелец, время старта, статус |
+| Завершение сеанса | `POST /api/sessions/{id}/finish` | Владелец или ADMIN, переход брони в COMPLETED |
 | Таймер | `GET /api/sessions/{id}` | Оставшееся время по серверному UTC |
 | Продление | `POST /api/sessions/{id}/extend` | Владелец, конфликт, доплата |
 
@@ -46,7 +47,7 @@ Debug использует `http://10.0.2.2:5080`, доступный из Andro
 - **12** — `BookingDraftValidatorTest`: даты, интервал, полные минуты и невалидные идентификаторы;
 - **4** — `AuthAttemptGuardTest`: последовательность входов и устаревшие ответы;
 - **6** — `SessionClockFormatterTest`: формат серверного таймера;
-- **9** — `GamingClubApiContractTest`: реальный `HttpURLConnection` против локального MockWebServer, JWT, запросы бронирования/отмены и ответы 401/409.
+- **10** — `GamingClubApiContractTest`: реальный `HttpURLConnection` против локального MockWebServer, JWT, запросы бронирования/отмены/завершения и ответы 401/409.
 
 Будущая команда локальной проверки из папки `mobile/GamingClub.Android`:
 
@@ -54,7 +55,7 @@ Debug использует `http://10.0.2.2:5080`, доступный из Andro
 ./gradlew.bat :app:testDebugUnitTest
 ```
 
-Если Gradle Wrapper не добавлен, используйте команду Gradle из Android Studio или Gradle установленный в системе. Команда приведена для повторения: фактически в CI `gradle :app:testDebugUnitTest` и `assembleDebug` успешно выполнялись, APK устанавливался и запускался на эмуляторе.
+Если Gradle Wrapper не добавлен, используйте команду Gradle из Android Studio или Gradle установленный в системе. После добавления проверки завершения сессии исходники содержат 32 JVM-теста. В CI ранее подтверждено 31 PASS, поэтому новый тест требует повторного запуска workflow.
 
 ## Сопоставление с Figma
 

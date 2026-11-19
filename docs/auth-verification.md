@@ -28,6 +28,7 @@
 | POST /api/bookings | Авторизованный, UserId из токена |
 | GET /api/sessions/{id} | Владелец брони или ADMIN |
 | POST /api/sessions/{id}/start | Владелец брони или ADMIN |
+| POST /api/sessions/{id}/finish | Владелец брони или ADMIN |
 | POST /api/sessions/{id}/extend | Владелец брони или ADMIN |
 | GET /api/admin/reports/occupancy | Только ADMIN |
 | GET /api/admin/reports/occupancy.csv | Только ADMIN |
