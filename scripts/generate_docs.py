@@ -1,5 +1,5 @@
 from docx import Document
-from docx.shared import Inches, Pt, RGBColor
+from docx.shared import Inches, Pt, RGBColor, Cm, Mm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
@@ -41,10 +41,13 @@ def table(doc,headers,rows,widths=None):
     return t
 
 def setup(doc):
-    sec=doc.sections[0]; sec.top_margin=Inches(.7); sec.bottom_margin=Inches(.7); sec.left_margin=Inches(.9); sec.right_margin=Inches(.7)
-    styles=doc.styles; styles['Normal'].font.name='Times New Roman'; styles['Normal']._element.rPr.rFonts.set(qn('w:eastAsia'),'Times New Roman'); styles['Normal'].font.size=Pt(12)
+    sec=doc.sections[0]; sec.top_margin=Mm(20); sec.bottom_margin=Mm(20); sec.left_margin=Mm(30); sec.right_margin=Mm(10)
+    sec.different_first_page_header_footer = True
+    footer=sec.footer.paragraphs[0]; footer.alignment=WD_ALIGN_PARAGRAPH.CENTER
+    run=footer.add_run(); begin=OxmlElement('w:fldChar'); begin.set(qn('w:fldCharType'),'begin'); instr=OxmlElement('w:instrText'); instr.set(qn('xml:space'),'preserve'); instr.text='PAGE'; end=OxmlElement('w:fldChar'); end.set(qn('w:fldCharType'),'end'); run._r.extend([begin,instr,end])
+    styles=doc.styles; normal=styles['Normal']; normal.font.name='Times New Roman'; normal._element.rPr.rFonts.set(qn('w:eastAsia'),'Times New Roman'); normal.font.size=Pt(14); normal.paragraph_format.line_spacing=1.5; normal.paragraph_format.first_line_indent=Cm(1.25); normal.paragraph_format.space_after=Pt(0)
     for s in ['Heading 1','Heading 2','Heading 3']:
-        styles[s].font.name='Times New Roman'; styles[s]._element.rPr.rFonts.set(qn('w:eastAsia'),'Times New Roman')
+        styles[s].font.name='Times New Roman'; styles[s]._element.rPr.rFonts.set(qn('w:eastAsia'),'Times New Roman'); styles[s].font.bold=True; styles[s].font.size=Pt(14); styles[s].paragraph_format.line_spacing=1.5; styles[s].paragraph_format.first_line_indent=Cm(0); styles[s].paragraph_format.space_before=Pt(12); styles[s].paragraph_format.space_after=Pt(6)
 
 def page(doc): doc.add_page_break()
 

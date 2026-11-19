@@ -16,3 +16,14 @@ Set-ExecutionPolicy -Scope Process Bypass
 Параметры `-SkipDatabase`, `-RunTests` и `-StartApi` управляют необязательными шагами. Для SQL Server Express используйте `-SqlServer "localhost\\SQLEXPRESS"`. Для другого экземпляра передайте собственное имя сервера.
 
 Скрипт не устанавливает Windows, SQL Server, .NET SDK, Java или Android Studio. Если команда отсутствует, он записывает это в `install.log` и сообщает, какой компонент требуется установить.
+
+## Сборка проекта
+
+Для сборки API, WPF и запуска тестов используйте отдельный скрипт:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\Build-GamingClub.ps1 -Configuration Release -RunTests
+```
+
+Для Android добавьте `-BuildAndroid`. Сборка Android выполняется через `gradlew.bat`, если Wrapper присутствует, или через установленный Gradle. В текущем архиве Gradle Wrapper не включён.

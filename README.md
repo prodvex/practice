@@ -60,6 +60,8 @@
 - `docs/Техническое_задание_для_согласования.docx` — ТЗ для заполнения и подписания.
 - `docs/Чек_лист_сдачи_и_защиты.docx` — контроль комплектности и сценарий демонстрации.
 - `scripts/Install-GamingClub.ps1` — распаковка ZIP, настройка локальной конфигурации, восстановление зависимостей и загрузка SQL seed.
+- `scripts/Build-GamingClub.ps1` — сборка API/WPF, тесты и опциональная сборка Android.
+- `docs/gost-compliance.md` — проверка оформления Word-комплекта и незаполненные требования.
 
 Для установки из ZIP в Windows PowerShell выполните `Set-ExecutionPolicy -Scope Process Bypass`, затем `./scripts/Install-GamingClub.ps1 -ArchivePath ./practice.zip -RunTests -StartApi`. Подробности находятся в `scripts/README-install.md`.
 
