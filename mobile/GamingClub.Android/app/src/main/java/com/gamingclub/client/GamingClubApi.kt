@@ -82,6 +82,9 @@ class GamingClubApi(private val baseUrl: String) {
     fun startSession(bookingId: Int) =
         JSONObject(request("POST", "/api/sessions/$bookingId/start", JSONObject()))
 
+    fun finishSession(bookingId: Int) =
+        JSONObject(request("POST", "/api/sessions/$bookingId/finish", JSONObject()))
+
     fun clock(bookingId: Int) =
         JSONObject(request("GET", "/api/sessions/$bookingId"))
 

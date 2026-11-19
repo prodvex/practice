@@ -12,6 +12,39 @@ public partial class MainWindow
     private async void RefreshBookings_Click(object sender, RoutedEventArgs e) =>
         await RefreshBookingsAsync();
 
+    private async void StartSession_Click(object sender, RoutedEventArgs e) =>
+        await ChangeSessionStateAsync("start", "Сессия запущена.");
+
+    private async void FinishSession_Click(object sender, RoutedEventArgs e) =>
+        await ChangeSessionStateAsync("finish", "Сессия завершена.");
+
+    private async Task ChangeSessionStateAsync(string action, string successMessage)
+    {
+        if (!isAdmin || string.IsNullOrWhiteSpace(token))
+        {
+            ExtensionStatus.Text = "Для управления сессией войдите как ADMIN.";
+            return;
+        }
+        if (!int.TryParse(BookingIdInput.Text, out var bookingId) || bookingId <= 0)
+        {
+            ExtensionStatus.Text = "Укажите положительный ID брони.";
+            return;
+        }
+        try
+        {
+            using var request = Authorized(HttpMethod.Post, $"/api/sessions/{bookingId}/{action}");
+            using var response = await Client.SendAsync(request);
+            ExtensionStatus.Text = response.IsSuccessStatusCode
+                ? successMessage
+                : $"Операция отклонена: HTTP {(int)response.StatusCode}.";
+            if (response.IsSuccessStatusCode) await RefreshBookingsAsync();
+        }
+        catch (Exception ex)
+        {
+            ExtensionStatus.Text = $"Ошибка API ({ex.GetType().Name}).";
+        }
+    }
+
 
     private async void CancelSelectedBooking_Click(object sender, RoutedEventArgs e)
     {

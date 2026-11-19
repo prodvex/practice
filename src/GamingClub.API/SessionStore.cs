@@ -7,6 +7,8 @@ namespace GamingClub.API;
 public sealed record SessionClock(int SessionId, int BookingId, DateTime StartedUtc,
     DateTime EndsUtc, DateTime? FinishedUtc, int RemainingSeconds);
 
+public sealed record SessionFinishResult(bool Success, string Message);
+
 /// <summary>Manages development-only session clocks. Writes require authentication before production.</summary>
 public sealed class SessionStore(IConfiguration configuration)
 {
@@ -82,5 +84,51 @@ public sealed class SessionStore(IConfiguration configuration)
         }
         await tx.CommitAsync(ct);
         return (true, "Session started.");
+    }
+
+    /// <summary>Finishes a running session and marks its booking completed atomically.</summary>
+    public async Task<SessionFinishResult> FinishAsync(int bookingId, CancellationToken ct)
+    {
+        if (bookingId <= 0) return new(false, "Invalid booking ID.");
+        await using var connection = new SqlConnection(ConnectionString);
+        await connection.OpenAsync(ct);
+        await using var tx = (SqlTransaction)await connection.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+        const string select = """
+            SELECT b.Status, s.FinishedUtc
+            FROM dbo.Bookings b WITH (UPDLOCK, HOLDLOCK)
+            JOIN dbo.Sessions s WITH (UPDLOCK, HOLDLOCK) ON s.BookingId=b.BookingId
+            WHERE b.BookingId=@id
+            """;
+        string? bookingStatus = null;
+        DateTime? finishedUtc = null;
+        await using (var cmd = new SqlCommand(select, connection, tx))
+        {
+            cmd.Parameters.Add("@id", SqlDbType.Int).Value = bookingId;
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            if (await reader.ReadAsync(ct))
+            {
+                bookingStatus = reader.GetString(0);
+                finishedUtc = reader.IsDBNull(1) ? null : reader.GetDateTime(1);
+            }
+        }
+
+        if (bookingStatus is null) return new(false, "Session not found.");
+        if (finishedUtc.HasValue || bookingStatus != "ACTIVE")
+            return new(false, "Session is already finished.");
+
+        var now = DateTime.UtcNow;
+        await using (var cmd = new SqlCommand(
+            "UPDATE dbo.Sessions SET FinishedUtc=@now WHERE BookingId=@id AND FinishedUtc IS NULL; " +
+            "UPDATE dbo.Bookings SET Status='COMPLETED' WHERE BookingId=@id AND Status='ACTIVE';",
+            connection, tx))
+        {
+            cmd.Parameters.Add("@now", SqlDbType.DateTime2).Value = now;
+            cmd.Parameters.Add("@id", SqlDbType.Int).Value = bookingId;
+            if (await cmd.ExecuteNonQueryAsync(ct) < 2)
+                return new(false, "Session could not be finished.");
+        }
+        await tx.CommitAsync(ct);
+        return new(true, "Session finished.");
     }
 }

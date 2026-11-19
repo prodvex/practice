@@ -156,6 +156,17 @@ app.MapPost("/api/sessions/{bookingId:int}/start", async (int bookingId, ClaimsP
         Results.BadRequest(new { error = result.Message });
 }).RequireAuthorization();
 
+app.MapPost("/api/sessions/{bookingId:int}/finish", async (int bookingId, ClaimsPrincipal principal,
+    BookingAccess access, SessionStore store, CancellationToken ct) =>
+{
+    if (!int.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        return Results.Unauthorized();
+    if (!principal.IsInRole("ADMIN") && !await access.IsOwnerAsync(bookingId, userId, ct))
+        return Results.NotFound();
+    var result = await store.FinishAsync(bookingId, ct);
+    return result.Success ? Results.Ok(result) : Results.BadRequest(new { error = result.Message });
+}).RequireAuthorization();
+
 app.MapPost("/api/sessions/{bookingId:int}/extend", async (int bookingId, ExtendSessionRequest request,
     ClaimsPrincipal principal, BookingAccess access, SessionExtensionStore store, CancellationToken ct) =>
 {
@@ -294,6 +305,14 @@ if (app.Environment.IsDevelopment())
         return result.Success ? Results.Ok(new { message = result.Message })
             : Results.BadRequest(new { error = result.Message });
     }).WithName("StartDevSession");
+
+    app.MapPost("/api/dev/sessions/{bookingId:int}/finish", async (int bookingId,
+        SessionStore store, CancellationToken ct) =>
+    {
+        var result = await store.FinishAsync(bookingId, ct);
+        return result.Success ? Results.Ok(result)
+            : Results.BadRequest(new { error = result.Message });
+    }).WithName("FinishDevSession");
 
     app.MapPost("/api/dev/bookings", async (CreateBookingRequest input, BookingStore db, CancellationToken ct) =>
     {

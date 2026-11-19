@@ -130,6 +130,10 @@
                                  ToolTip="Новый конец в UTC, например 2026-11-20T16:00:00Z"
                                  Text="2026-11-20T16:00:00Z"/>
                         <Button Content="Продлить" Width="110" Height="30" Click="Extend_Click"/>
+                        <Button Content="Запустить" Width="110" Height="30" Margin="8,0,0,0"
+                                Click="StartSession_Click"/>
+                        <Button Content="Завершить" Width="110" Height="30" Margin="8,0,0,0"
+                                Click="FinishSession_Click"/>
                     </StackPanel>
                     <TextBlock x:Name="ExtensionStatus" Foreground="#BFD7F7" TextWrapping="Wrap"
                                Margin="0,8,0,0" Text="Введите ID брони и новую дату UTC."/>

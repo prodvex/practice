@@ -166,5 +166,20 @@ public sealed class SqlReadAndAuthIntegrationTests
         Assert.InRange(clock.RemainingSeconds, 1, 3600);
         var repeated = await sessions.StartAsync(id, CancellationToken.None);
         Assert.False(repeated.Success);
+
+        var finished = await sessions.FinishAsync(id, CancellationToken.None);
+        Assert.True(finished.Success, finished.Message);
+        var finishedAgain = await sessions.FinishAsync(id, CancellationToken.None);
+        Assert.False(finishedAgain.Success);
+        await using var verify = new SqlConnection(Config.GetConnectionString("GamingClub"));
+        await verify.OpenAsync();
+        await using var command = new SqlCommand(
+            "SELECT Status, FinishedUtc FROM dbo.Bookings b JOIN dbo.Sessions s ON s.BookingId=b.BookingId WHERE b.BookingId=@id",
+            verify);
+        command.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        await using var row = await command.ExecuteReaderAsync();
+        Assert.True(await row.ReadAsync());
+        Assert.Equal("COMPLETED", row.GetString(0));
+        Assert.False(row.IsDBNull(1));
     }
 }

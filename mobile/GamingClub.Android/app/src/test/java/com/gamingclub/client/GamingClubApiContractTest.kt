@@ -112,6 +112,16 @@ class GamingClubApiContractTest {
             JSONObject(request.body.readUtf8()).getString("newEndUtc"))
     }
 
+    @Test fun finishUsesAuthenticatedPost() {
+        authenticated()
+        server.enqueue(success("""{"success":true,"message":"Session finished."}"""))
+        assertTrue(api.finishSession(12).getBoolean("success"))
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/api/sessions/12/finish", request.path)
+        assertEquals("Bearer jwt-in-memory-for-test", request.getHeader("Authorization"))
+    }
+
     @Test fun bookingConflictReturnsHttp409() {
         authenticated()
         server.enqueue(MockResponse().setResponseCode(409)

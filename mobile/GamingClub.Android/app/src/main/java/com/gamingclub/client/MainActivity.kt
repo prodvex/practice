@@ -326,6 +326,11 @@ class MainActivity : Activity() {
             text = "Продлить на 30 минут"
             setOnClickListener { sessionAction("extend") }
         })
+        session.addView(Button(this).apply {
+            ClubUi.button(this, false)
+            text = "Завершить сессию"
+            setOnClickListener { sessionAction("finish") }
+        })
 
         val profile = screens.getValue("Профиль")
         profile.addView(label("5. Профиль").apply { ClubUi.label(this, heading = true) })
@@ -563,6 +568,12 @@ class MainActivity : Activity() {
                     status.text = "Продлено; доплата ${result.getDouble("extraChargeRub")} ₽"
                     sessionAction("clock")
                 }
+            }
+            "finish" -> execute({ api.finishSession(id) }) {
+                stopClockPolling()
+                sessionRunning = false
+                sessionView.text = "Сессия завершена"
+                status.text = "Сессия завершена"
             }
         }
     }
