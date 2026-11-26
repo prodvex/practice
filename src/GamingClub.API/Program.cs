@@ -15,6 +15,7 @@ if (args is ["--initialize-demo", var scripts])
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
 builder.Services.AddSingleton<OccupancyStore>();
+builder.Services.AddSingleton<RevenueStore>();
 builder.Services.AddSingleton<SessionStore>();
 builder.Services.AddSingleton<SessionExtensionStore>();
 builder.Services.AddSingleton<AuthStore>();
@@ -236,6 +237,23 @@ admin.MapGet("/reports/occupancy.csv", async (DateTimeOffset from, DateTimeOffse
         return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
     var report = await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct);
     return Results.File(CsvReport.Export(report), "text/csv; charset=utf-8", "gamingclub-occupancy.csv");
+});
+
+admin.MapGet("/reports/revenue", async (DateTimeOffset from, DateTimeOffset to,
+    RevenueStore db, CancellationToken ct) =>
+{
+    if (to <= from || to - from > TimeSpan.FromDays(31))
+        return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+    return Results.Ok(await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct));
+});
+
+admin.MapGet("/reports/revenue.csv", async (DateTimeOffset from, DateTimeOffset to,
+    RevenueStore db, CancellationToken ct) =>
+{
+    if (to <= from || to - from > TimeSpan.FromDays(31))
+        return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+    var report = await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct);
+    return Results.File(CsvReport.Export(report), "text/csv; charset=utf-8", "gamingclub-revenue.csv");
 });
 
 app.MapGet("/health", () => Results.Ok(new

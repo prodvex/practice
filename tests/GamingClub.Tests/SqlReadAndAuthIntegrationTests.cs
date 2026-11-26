@@ -140,6 +140,41 @@ public sealed class SqlReadAndAuthIntegrationTests
     }
 
     [SqlServerFact]
+    public async Task RevenueStore_SeparatesPaidAndPendingAndUsesHalfOpenDates()
+    {
+        var scenario = await CreateScenarioAsync();
+        var booking = await new BookingStore(Config).CreateAsync(
+            new CreateBookingRequest(scenario.UserId, scenario.SeatId, scenario.TariffId,
+                Future, Future.AddHours(1)), CancellationToken.None);
+        Assert.Equal(BookingError.None, booking.Error);
+        var from = new DateTime(2099, 1, 1, 10, 0, 0, DateTimeKind.Utc);
+        var to = from.AddHours(1);
+        await using var connection = new SqlConnection(Config.GetConnectionString("GamingClub"));
+        await connection.OpenAsync();
+        const string sql = """
+            INSERT dbo.Payments(BookingId, AmountRub, PaidUtc, PaymentStatus)
+            VALUES (@id, 55.25, @from, 'PAID'),
+                   (@id, 32.50, DATEADD(minute, 1, @from), 'PENDING'),
+                   (@id, 10.00, @from, 'VOID'),
+                   (@id, 20.00, @from, 'REFUNDED'),
+                   (@id, 99.00, @to, 'PAID');
+            """;
+        await using var insert = new SqlCommand(sql, connection);
+        insert.Parameters.Add("@id", SqlDbType.Int).Value = booking.Booking!.BookingId;
+        insert.Parameters.Add("@from", SqlDbType.DateTime2).Value = from;
+        insert.Parameters.Add("@to", SqlDbType.DateTime2).Value = to;
+        var store = new RevenueStore(Config);
+        var before = await store.GetReportAsync(from, to, CancellationToken.None);
+        await insert.ExecuteNonQueryAsync();
+        var after = await store.GetReportAsync(from, to, CancellationToken.None);
+        Assert.Equal(55.25m, after.PaidRub - before.PaidRub);
+        Assert.Equal(32.50m, after.PendingRub - before.PendingRub);
+        Assert.EndsWith($";{after.PaidRub.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)};" +
+            $"{after.PendingRub.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)};241810\r\n",
+            System.Text.Encoding.UTF8.GetString(CsvReport.Export(after)));
+    }
+
+    [SqlServerFact]
     public async Task SessionStore_ClockReflectsActualServerState()
     {
         var s = await CreateScenarioAsync();
