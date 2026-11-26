@@ -1,8 +1,16 @@
 using GamingClub.API;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
+
+if (args is ["--initialize-demo", var scripts])
+{
+    await DemoDatabase.InitializeAsync(scripts);
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
@@ -54,7 +62,7 @@ var app = builder.Build();
 
 // Authentication is implemented for the secured routes below. The legacy
 // /api/dev routes bypass authorization: never expose Development API publicly.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("LocalDemo"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -328,6 +336,21 @@ if (app.Environment.IsDevelopment())
     }).WithName("CreateDevBooking");
 }
 
-app.Run();
+var portFile = app.Configuration["GAMINGCLUB_PORT_FILE"];
+if (app.Environment.IsEnvironment("LocalDemo") && !string.IsNullOrWhiteSpace(portFile))
+{
+    app.Urls.Clear();
+    app.Urls.Add("http://127.0.0.1:0");
+    await app.StartAsync();
+    var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>();
+    var port = new Uri(addresses!.Addresses.Single()).Port;
+    await File.WriteAllTextAsync(portFile + ".tmp", port.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    File.Move(portFile + ".tmp", portFile, overwrite: true);
+    await app.WaitForShutdownAsync();
+}
+else
+{
+    app.Run();
+}
 
 public partial class Program { }
