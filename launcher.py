@@ -257,7 +257,7 @@ def provision_database(stack, state, env):
     admin_password, visitor_password = (secrets.token_urlsafe(14) for _ in range(2))
     setup = env | {"GAMINGCLUB_DEMO_ADMIN_PASSWORD": admin_password,
                    "GAMINGCLUB_DEMO_VISITOR_PASSWORD": visitor_password}
-    process = start(stack, [str(API), "--initialize-demo", str(ROOT / "database")],
+    process = start(stack, [str(API), "--initialize-demo", str(ROOT / "database"), str(state / "sql")],
                     state, "database", setup, hidden=True)
     if process.wait(timeout=180) != 0:
         raise RuntimeError("Инициализация базы завершилась ошибкой. См. .local/database.err.log.")

@@ -9,7 +9,7 @@ internal static partial class DemoDatabase
     internal const string AdminLogin = "club_admin_18";
     internal const string VisitorLogin = "club_visitor_18";
 
-    internal static async Task InitializeAsync(string scripts)
+    internal static async Task InitializeAsync(string scripts, string dataDirectory)
     {
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__GamingClub")
             ?? throw new InvalidOperationException("The demo database connection is missing.");
@@ -30,8 +30,9 @@ internal static partial class DemoDatabase
         await using (var connection = new SqlConnection(master.ConnectionString))
         {
             await connection.OpenAsync();
-            await ExecuteAsync(connection, null,
-                "IF DB_ID(N'GamingClub') IS NULL CREATE DATABASE GamingClub;");
+            await using var exists = new SqlCommand("SELECT DB_ID(N'GamingClub');", connection);
+            if (await exists.ExecuteScalarAsync() is DBNull)
+                await CreateOrAttachAsync(connection, dataDirectory);
         }
 
         await using var club = new SqlConnection(database.ConnectionString);
@@ -58,6 +59,28 @@ internal static partial class DemoDatabase
         await UpsertAccountAsync(club, transaction, VisitorLogin, "VISITOR", "Посетитель стенда",
             "GAMINGCLUB_DEMO_VISITOR_PASSWORD");
         await transaction.CommitAsync();
+    }
+
+    private static async Task CreateOrAttachAsync(SqlConnection connection, string dataDirectory)
+    {
+        var directory = Directory.CreateDirectory(Path.GetFullPath(dataDirectory)).FullName;
+        var mdf = Path.Combine(directory, "GamingClub.mdf");
+        var ldf = Path.Combine(directory, "GamingClub_log.ldf");
+        var dataExists = File.Exists(mdf);
+        if (dataExists != File.Exists(ldf))
+            throw new InvalidOperationException("The demo database needs both its data file and its log.");
+
+        // SQL Server requires literal filenames in CREATE DATABASE. Double apostrophes in paths.
+        var dataPath = mdf.Replace("'", "''", StringComparison.Ordinal);
+        var logPath = ldf.Replace("'", "''", StringComparison.Ordinal);
+        var sql = dataExists
+            ? $"CREATE DATABASE GamingClub ON (FILENAME=N'{dataPath}'), (FILENAME=N'{logPath}') FOR ATTACH;"
+            : $"""
+                CREATE DATABASE GamingClub
+                ON PRIMARY (NAME=N'GamingClub', FILENAME=N'{dataPath}')
+                LOG ON (NAME=N'GamingClub_log', FILENAME=N'{logPath}');
+                """;
+        await ExecuteAsync(connection, null, sql);
     }
 
     private static async Task UpsertAccountAsync(SqlConnection connection, SqlTransaction transaction,

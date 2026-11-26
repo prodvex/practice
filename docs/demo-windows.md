@@ -25,7 +25,7 @@
 - `Start-GamingClub.cmd -ServerOnly` запускает SQL и API.
 - `Start-GamingClub.cmd -AndroidSdk "C:\Android\Sdk"` использует указанный SDK с подходящим образом или готовым AVD.
 - Журналы находятся в `.local`. Для SQL смотрите `localdb.log` и `database.err.log`, для API — `server.out.log`, для Android — `emulator.out.log` и `adb.err.log`.
-- База принадлежит отдельному экземпляру LocalDB в профиле пользователя. Другой путь распаковки создаёт новый экземпляр.
+- Для каждой папки запуска создаётся отдельный экземпляр LocalDB. Файлы новой базы хранятся в ее каталоге `.local/sql`. Новая распаковка начинает с чистых демонстрационных данных.
 - Исходники собираются командой `scripts/Build-GamingClub.ps1 -PublishDemo -BuildAndroid`. Для пересборки нужны .NET SDK, JDK, Gradle и Android SDK. Лаунчер использует официальный комплект Python x64 Embeddable из `runtime/python`.
 
 Запуск Android и управление процессами адаптированы из учебного примера МФЦ, предоставленного вместе с заданием.

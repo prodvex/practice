@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 
-if (args is ["--initialize-demo", var scripts])
+if (args is ["--initialize-demo", var scripts, var dataDirectory])
 {
-    await DemoDatabase.InitializeAsync(scripts);
+    await DemoDatabase.InitializeAsync(scripts, dataDirectory);
     return;
 }
 
