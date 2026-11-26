@@ -447,6 +447,13 @@ def provision_android(state, explicit, env):
         print(f"Создаю виртуальное устройство {AVD}.", flush=True)
         sdk_java(java, sdk, "avdmanager", "create", "avd", "-f", "-n", AVD, "-k", SYSTEM_IMAGE,
                  env=env, choices="no\n")
+    directory = avd_home / f"{AVD}.avd"
+    if not any(directory.glob("userdata-qemu.img*")):
+        config = directory / "config.ini"
+        properties = avd_properties(config)
+        properties["disk.dataPartition.size"] = "2G"
+        config.write_text(
+            "".join(f"{key}={value}\n" for key, value in properties.items()), encoding="utf-8")
     return sdk, AVD, env
 
 
