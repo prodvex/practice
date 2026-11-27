@@ -1,12 +1,21 @@
 using GamingClub.API;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
+
+if (args is ["--initialize-demo", var scripts, var dataDirectory])
+{
+    await DemoDatabase.InitializeAsync(scripts, dataDirectory);
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<BookingStore>();
 builder.Services.AddSingleton<OccupancyStore>();
+builder.Services.AddSingleton<RevenueStore>();
 builder.Services.AddSingleton<SessionStore>();
 builder.Services.AddSingleton<SessionExtensionStore>();
 builder.Services.AddSingleton<AuthStore>();
@@ -54,7 +63,7 @@ var app = builder.Build();
 
 // Authentication is implemented for the secured routes below. The legacy
 // /api/dev routes bypass authorization: never expose Development API publicly.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("LocalDemo"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -230,6 +239,23 @@ admin.MapGet("/reports/occupancy.csv", async (DateTimeOffset from, DateTimeOffse
     return Results.File(CsvReport.Export(report), "text/csv; charset=utf-8", "gamingclub-occupancy.csv");
 });
 
+admin.MapGet("/reports/revenue", async (DateTimeOffset from, DateTimeOffset to,
+    RevenueStore db, CancellationToken ct) =>
+{
+    if (to <= from || to - from > TimeSpan.FromDays(31))
+        return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+    return Results.Ok(await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct));
+});
+
+admin.MapGet("/reports/revenue.csv", async (DateTimeOffset from, DateTimeOffset to,
+    RevenueStore db, CancellationToken ct) =>
+{
+    if (to <= from || to - from > TimeSpan.FromDays(31))
+        return Results.BadRequest(new { error = "Period must be positive and at most 31 days." });
+    var report = await db.GetReportAsync(from.UtcDateTime, to.UtcDateTime, ct);
+    return Results.File(CsvReport.Export(report), "text/csv; charset=utf-8", "gamingclub-revenue.csv");
+});
+
 app.MapGet("/health", () => Results.Ok(new
 {
     service = "GamingClub.API",
@@ -328,6 +354,21 @@ if (app.Environment.IsDevelopment())
     }).WithName("CreateDevBooking");
 }
 
-app.Run();
+var portFile = app.Configuration["GAMINGCLUB_PORT_FILE"];
+if (app.Environment.IsEnvironment("LocalDemo") && !string.IsNullOrWhiteSpace(portFile))
+{
+    app.Urls.Clear();
+    app.Urls.Add("http://127.0.0.1:0");
+    await app.StartAsync();
+    var addresses = app.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>();
+    var port = new Uri(addresses!.Addresses.Single()).Port;
+    await File.WriteAllTextAsync(portFile + ".tmp", port.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    File.Move(portFile + ".tmp", portFile, overwrite: true);
+    await app.WaitForShutdownAsync();
+}
+else
+{
+    app.Run();
+}
 
 public partial class Program { }

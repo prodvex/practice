@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace GamingClub.API;
@@ -5,6 +6,14 @@ namespace GamingClub.API;
 /// <summary>Exports occupancy statistics to a single-record UTF-8 CSV.</summary>
 public static class CsvReport
 {
+    public static byte[] Export(RevenueReport report)
+    {
+        var csv = "from_utc;to_utc;paid_rub;pending_rub;seed\r\n" +
+            string.Create(CultureInfo.InvariantCulture,
+                $"{report.FromUtc:O};{report.ToUtc:O};{report.PaidRub:F2};{report.PendingRub:F2};241810\r\n");
+        return new UTF8Encoding(true).GetPreamble().Concat(Encoding.UTF8.GetBytes(csv)).ToArray();
+    }
+
     /// <summary>Produces an Excel-compatible CSV using semicolon separators.</summary>
     public static byte[] Export(OccupancyReport report)
     {

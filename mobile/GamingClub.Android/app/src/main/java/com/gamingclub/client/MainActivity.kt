@@ -14,7 +14,11 @@ import java.time.temporal.ChronoUnit
 
 /** Development-only Android client backed by GamingClub API. */
 class MainActivity : Activity() {
-    private val api by lazy { GamingClubApi(BuildConfig.API_BASE_URL) }
+    private val api by lazy {
+        val demoPort = if (BuildConfig.DEBUG) intent.getIntExtra("api_port", 0) else 0
+        val baseUrl = if (demoPort in 1..65535) "http://10.0.2.2:$demoPort" else BuildConfig.API_BASE_URL
+        GamingClubApi(baseUrl)
+    }
     private lateinit var status: TextView
     private lateinit var loginName: EditText
     private lateinit var loginPassword: EditText

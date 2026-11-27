@@ -17,6 +17,10 @@ local.properties
 *.apk
 *.aab
 # Secrets
+.local/
+builds/
+runtime/
+__pycache__/
 .env
 .env.*
 !.env.example
