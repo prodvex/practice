@@ -25,16 +25,21 @@
             </Border>
             <Border Background="#1D2C44" CornerRadius="8" Padding="12" Margin="0,0,0,14">
                 <StackPanel>
-                    <TextBlock Foreground="White" FontWeight="SemiBold" Text="Загрузка игрового зала"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <TextBox x:Name="ReportFrom" Width="220" Height="30" Margin="0,0,8,0"
-                                 Text="2026-11-18T12:00:00Z" ToolTip="Начало UTC"/>
-                        <TextBox x:Name="ReportTo" Width="220" Height="30" Margin="0,0,8,0"
-                                 Text="2026-11-18T13:00:00Z" ToolTip="Конец UTC"/>
-                        <Button Content="Рассчитать" Width="110" Height="30" Click="Report_Click"/>
+                    <TextBlock Foreground="White" FontWeight="SemiBold" Text="Отчёты за период UTC"/>
+                    <WrapPanel Margin="0,8,0,0">
+                        <ComboBox x:Name="ReportKind" Width="140" Height="30" Margin="0,0,8,6"
+                                  SelectedIndex="0" ToolTip="Вид отчёта">
+                            <ComboBoxItem Content="Загрузка зала"/>
+                            <ComboBoxItem Content="Выручка"/>
+                        </ComboBox>
+                        <TextBox x:Name="ReportFrom" Width="165" Height="30" Margin="0,0,8,6"
+                                 ToolTip="Начало UTC"/>
+                        <TextBox x:Name="ReportTo" Width="165" Height="30" Margin="0,0,8,6"
+                                 ToolTip="Конец UTC"/>
+                        <Button Content="Рассчитать" Width="110" Height="30" Margin="0,0,8,6" Click="Report_Click"/>
                         <Button Content="Экспорт CSV" Width="115" Height="30"
-                                Margin="8,0,0,0" Click="ExportReport_Click"/>
-                    </StackPanel>
+                                Margin="0,0,0,6" Click="ExportReport_Click"/>
+                    </WrapPanel>
                     <TextBlock x:Name="ReportStatus" Foreground="#BFD7F7"
                                TextWrapping="Wrap" Margin="0,8,0,0"
                                Text="Отчёт доступен только администратору после входа."/>

@@ -3,6 +3,7 @@ param(
     [ValidateSet('Debug','Release')][string]$Configuration = 'Release',
     [switch]$RunTests,
     [switch]$BuildAndroid,
+    [switch]$PublishDemo,
     [string]$OutputPath = 'artifacts'
 )
 $ErrorActionPreference = 'Stop'
@@ -24,6 +25,14 @@ if (Get-Command python -ErrorAction SilentlyContinue) {
 Invoke-Step 'Восстановление API' { dotnet restore src/GamingClub.API/GamingClub.API.csproj }
 Invoke-Step 'Сборка API' { dotnet build src/GamingClub.API/GamingClub.API.csproj -c $Configuration --no-restore }
 Invoke-Step 'Сборка WPF' { dotnet build src/GamingClub.Desktop/GamingClub.Desktop.csproj -c $Configuration -p:EnableWindowsTargeting=true }
+if ($PublishDemo) {
+    Invoke-Step 'Автономная сборка API для Windows x64' {
+        dotnet publish src/GamingClub.API/GamingClub.API.csproj -c $Configuration -r win-x64 --self-contained true -o builds/windows/api
+    }
+    Invoke-Step 'Автономная сборка WPF для Windows x64' {
+        dotnet publish src/GamingClub.Desktop/GamingClub.Desktop.csproj -c $Configuration -r win-x64 --self-contained true -o builds/windows/desktop
+    }
+}
 if ($RunTests) {
     Invoke-Step 'Тесты .NET и покрытие' {
         dotnet test tests/GamingClub.Tests/GamingClub.Tests.csproj -c $Configuration --collect:'XPlat Code Coverage' --logger 'console;verbosity=normal'
@@ -33,13 +42,17 @@ if ($BuildAndroid) {
     $android = Join-Path $root 'mobile/GamingClub.Android'
     $wrapper = Join-Path $android 'gradlew.bat'
     if (Test-Path $wrapper) {
-        Invoke-Step 'Сборка Android Debug APK' { & $wrapper ':app:assembleDebug' }
-        Copy-Item (Join-Path $android 'app/build/outputs/apk/debug/app-debug.apk') $OutputPath -Force
+        Invoke-Step 'Сборка Android Debug APK' { & $wrapper -p $android ':app:assembleDebug' }
     } elseif (Get-Command gradle -ErrorAction SilentlyContinue) {
         Invoke-Step 'Сборка Android Debug APK' { gradle -p $android ':app:assembleDebug' }
-        Copy-Item (Join-Path $android 'app/build/outputs/apk/debug/app-debug.apk') $OutputPath -Force
     } else {
         throw 'Для Android нужен gradlew.bat или установленный Gradle. Android Studio может использовать этот проект без Wrapper.'
+    }
+    $apk = Join-Path $android 'app/build/outputs/apk/debug/app-debug.apk'
+    Copy-Item $apk $OutputPath -Force
+    if ($PublishDemo) {
+        New-Item -ItemType Directory -Force -Path builds/android | Out-Null
+        Copy-Item $apk builds/android/GamingClub.apk -Force
     }
 }
 Write-Host "`nСборка завершена. Артефакты и результаты тестов находятся в $OutputPath" -ForegroundColor Green

@@ -18,8 +18,9 @@ class HallPlanView(context: Context) : View(context) {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val roomPadding = 58f
-    private val seatRadius = 32f
+    private val layoutSeatRadius = 43f
     private var factor = 1f
+    private var seatRadius = layoutSeatRadius
     private var offsetX = roomPadding
     private var offsetY = roomPadding
 
@@ -42,11 +43,12 @@ class HallPlanView(context: Context) : View(context) {
 
     private fun updateScale() {
         if (places.isEmpty()) return
-        val maxX = places.maxOf { it.x }.toFloat() + seatRadius
-        val maxY = places.maxOf { it.y }.toFloat() + seatRadius
+        val maxX = places.maxOf { it.x }.toFloat() + layoutSeatRadius
+        val maxY = places.maxOf { it.y }.toFloat() + layoutSeatRadius
         val scaleX = (width - 2f * roomPadding) / maxX.coerceAtLeast(1f)
         val scaleY = (height - 2f * roomPadding) / maxY.coerceAtLeast(1f)
         factor = min(scaleX, scaleY).coerceAtLeast(0.1f)
+        seatRadius = layoutSeatRadius * factor
         offsetX = roomPadding
         offsetY = roomPadding
     }
@@ -61,7 +63,8 @@ class HallPlanView(context: Context) : View(context) {
         canvas.drawRoundRect(10f, 10f, width - 10f, height - 10f, 18f, 18f, paint)
         paint.style = Paint.Style.FILL
         paint.textAlign = Paint.Align.CENTER
-        paint.textSize = 25f
+        paint.textSize = seatRadius
+        val baseline = -(paint.ascent() + paint.descent()) / 2f
         for (seat in places) {
             val cx = seat.x * factor + offsetX
             val cy = seat.y * factor + offsetY
@@ -72,7 +75,7 @@ class HallPlanView(context: Context) : View(context) {
             }
             canvas.drawCircle(cx, cy, seatRadius, paint)
             paint.color = Color.BLACK
-            canvas.drawText(seat.number.toString(), cx, cy + 8f, paint)
+            canvas.drawText(seat.number.toString(), cx, cy + baseline, paint)
         }
     }
 

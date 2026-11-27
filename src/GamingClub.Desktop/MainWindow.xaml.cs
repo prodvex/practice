@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Net.Http.Headers;
 using System.Windows;
@@ -81,18 +82,12 @@ public partial class MainWindow : Window
     private async void Report_Click(object sender, RoutedEventArgs e)
     {
         if (!isAdmin) { ReportStatus.Text = "Сначала войдите как ADMIN."; return; }
-        if (!DateTimeOffset.TryParse(ReportFrom.Text, out var from) ||
-            !DateTimeOffset.TryParse(ReportTo.Text, out var to) ||
-            !ReportFrom.Text.Trim().EndsWith("Z", StringComparison.OrdinalIgnoreCase) ||
-            !ReportTo.Text.Trim().EndsWith("Z", StringComparison.OrdinalIgnoreCase) ||
-            to <= from || to - from > TimeSpan.FromDays(31))
-        {
-            ReportStatus.Text = "Введите корректный UTC-период до 31 дня.";
-            return;
-        }
+        if (!TryGetReportPeriod(out var period)) return;
+        var revenue = ReportKind.SelectedIndex == 1;
         try
         {
-            var query = $"/api/admin/reports/occupancy?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
+            var kind = revenue ? "revenue" : "occupancy";
+            var query = $"/api/admin/reports/{kind}{period}";
             using var request = Authorized(HttpMethod.Get, query);
             using var response = await Client.SendAsync(request);
             if (!response.IsSuccessStatusCode)
@@ -100,9 +95,18 @@ public partial class MainWindow : Window
                 ReportStatus.Text = $"Отчёт недоступен: HTTP {(int)response.StatusCode}.";
                 return;
             }
-            var report = await response.Content.ReadFromJsonAsync<OccupancyResponse>();
-            ReportStatus.Text = report is null ? "Пустой ответ." :
-                $"Мест: {report.SeatCount}, занято {report.ReservedMinutes:0.##} минут, загрузка {report.OccupancyPercent:0.##}%";
+            if (revenue)
+            {
+                var report = await response.Content.ReadFromJsonAsync<RevenueResponse>();
+                ReportStatus.Text = report is null ? "Пустой ответ." :
+                    $"Оплачено: {report.PaidRub:N2} руб.  Ожидают оплаты: {report.PendingRub:N2} руб.";
+            }
+            else
+            {
+                var report = await response.Content.ReadFromJsonAsync<OccupancyResponse>();
+                ReportStatus.Text = report is null ? "Пустой ответ." :
+                    $"Мест: {report.SeatCount}, занято {report.ReservedMinutes:0.##} минут, загрузка {report.OccupancyPercent:0.##}%";
+            }
         }
         catch (Exception ex)
         {
@@ -110,15 +114,37 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool TryGetReportPeriod(out string period)
+    {
+        period = "";
+        if (!DateTimeOffset.TryParse(ReportFrom.Text, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var from) ||
+            !DateTimeOffset.TryParse(ReportTo.Text, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var to) ||
+            !ReportFrom.Text.Trim().EndsWith("Z", StringComparison.OrdinalIgnoreCase) ||
+            !ReportTo.Text.Trim().EndsWith("Z", StringComparison.OrdinalIgnoreCase) ||
+            to <= from || to - from > TimeSpan.FromDays(31))
+        {
+            ReportStatus.Text = "Укажите корректный UTC-интервал до 31 дня.";
+            return false;
+        }
+        period = $"?from={Uri.EscapeDataString(from.ToString("O"))}&to={Uri.EscapeDataString(to.ToString("O"))}";
+        return true;
+    }
+
     public sealed record LoginResponse(string AccessToken, string TokenType,
         int ExpiresIn, int UserId, string Login, string Role, string DisplayName);
     public sealed record OccupancyResponse(DateTime FromUtc, DateTime ToUtc,
         int SeatCount, decimal ReservedMinutes, decimal CapacityMinutes, decimal OccupancyPercent);
+    public sealed record RevenueResponse(decimal PaidRub, decimal PendingRub);
 
     public MainWindow()
     {
         InitializeComponent();
         DataContext = this;
+        var today = DateTime.UtcNow.Date;
+        ReportFrom.Text = today.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+        ReportTo.Text = today.AddDays(1).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         Loaded += async (_, _) => await RefreshAsync();
     }
 
